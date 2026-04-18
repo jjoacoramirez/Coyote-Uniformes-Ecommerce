@@ -10,22 +10,16 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-
 @Entity
-@Table(name = "productos")
+@Table(name = "categorias")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Producto {
+public class Categoria {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idProducto;
     private Long idCategoria;
     private String nombre;
     private String descripcion;
-    private BigDecimal precioBase;
-    private String imagenUrl;
-    private Boolean activo;
 }

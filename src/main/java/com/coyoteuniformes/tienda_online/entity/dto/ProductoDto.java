@@ -1,10 +1,5 @@
-package com.coyoteuniformes.tienda_online.entity;
+package com.coyoteuniformes.tienda_online.entity.dto;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,15 +7,11 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-@Entity
-@Table(name = "productos")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Producto {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class ProductoDto {
     private Long idProducto;
     private Long idCategoria;
     private String nombre;

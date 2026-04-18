@@ -10,22 +10,24 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Entity
-@Table(name = "productos")
+@Table(name = "usuarios")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Producto {
+public class Usuario {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idProducto;
-    private Long idCategoria;
+    private Long idUsuario;
     private String nombre;
-    private String descripcion;
-    private BigDecimal precioBase;
-    private String imagenUrl;
-    private Boolean activo;
+    private String apellido;
+    private String email;
+    private String contrasena;
+    private String telefono;
+    private String rol;
+    private LocalDate fechaRegistro;
+    private String estado;
 }

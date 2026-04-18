@@ -13,19 +13,20 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "productos")
+@Table(name = "variantes_producto")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Producto {
+public class VarianteProducto {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long idVariante;
     private Long idProducto;
-    private Long idCategoria;
-    private String nombre;
-    private String descripcion;
-    private BigDecimal precioBase;
-    private String imagenUrl;
+    private String talle;
+    private String color;
+    private Integer stock;
+    private String sku;
+    private BigDecimal precio;
     private Boolean activo;
 }

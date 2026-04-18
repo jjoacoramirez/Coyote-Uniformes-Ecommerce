@@ -11,21 +11,21 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Entity
-@Table(name = "productos")
+@Table(name = "pagos")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Producto {
+public class Pago {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idProducto;
-    private Long idCategoria;
-    private String nombre;
-    private String descripcion;
-    private BigDecimal precioBase;
-    private String imagenUrl;
-    private Boolean activo;
+    private Long idPago;
+    private Long idPedido;
+    private LocalDate fechaPago;
+    private BigDecimal monto;
+    private String metodoPago;
+    private String estadoPago;
 }
