@@ -1,40 +1,47 @@
 package com.coyoteuniformes.tienda_online.controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.coyoteuniformes.tienda_online.entity.dto.UsuarioDto;
+import com.coyoteuniformes.tienda_online.service.UsuarioService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.coyoteuniformes.tienda_online.entity.Usuario;
-import com.coyoteuniformes.tienda_online.service.UsuarioService;
+import java.util.List;
 
 @RestController
 @RequestMapping("usuarios")
 public class UsuarioController {
 
-    @Autowired
-    private UsuarioService usuarioService;
+    private final UsuarioService usuarioService;
+
+    public UsuarioController(UsuarioService usuarioService) {
+        this.usuarioService = usuarioService;
+    }
 
     @GetMapping
-    public String getAllUsuarios() {
-        return usuarioService.getAllUsuarios();
+    public ResponseEntity<List<UsuarioDto>> getAllUsuarios() {
+        return ResponseEntity.ok(usuarioService.getAllUsuarios());
     }
 
     @GetMapping("/{id}")
-    public String getUsuarioById(@PathVariable Long id) {
-        return usuarioService.getUsuarioById(id);
+    public ResponseEntity<UsuarioDto> getUsuarioById(@PathVariable Long id) {
+        return ResponseEntity.ok(usuarioService.getUsuarioById(id));
     }
 
     @PostMapping
-    public String createUsuario(@RequestBody Usuario usuario) {
-        return usuarioService.createUsuario(usuario.toString());
+    public ResponseEntity<UsuarioDto> createUsuario(@Valid @RequestBody UsuarioDto usuarioDto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.createUsuario(usuarioDto));
     }
 
     @PutMapping("/{id}")
-    public String updateUsuario(@PathVariable Long id, @RequestBody Usuario usuario) {
-        return usuarioService.updateUsuario(id, usuario.toString());
+    public ResponseEntity<UsuarioDto> updateUsuario(@PathVariable Long id, @Valid @RequestBody UsuarioDto usuarioDto) {
+        return ResponseEntity.ok(usuarioService.updateUsuario(id, usuarioDto));
     }
 
     @DeleteMapping("/{id}")
-    public String deleteUsuario(@PathVariable Long id) {
-        return usuarioService.deleteUsuario(id);
+    public ResponseEntity<Void> deleteUsuario(@PathVariable Long id) {
+        usuarioService.deleteUsuario(id);
+        return ResponseEntity.noContent().build();
     }
 }

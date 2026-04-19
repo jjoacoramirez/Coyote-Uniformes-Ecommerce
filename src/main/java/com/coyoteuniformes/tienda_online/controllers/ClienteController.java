@@ -1,40 +1,47 @@
 package com.coyoteuniformes.tienda_online.controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.coyoteuniformes.tienda_online.entity.dto.ClienteDto;
+import com.coyoteuniformes.tienda_online.service.ClienteService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.coyoteuniformes.tienda_online.entity.Cliente;
-import com.coyoteuniformes.tienda_online.service.ClienteService;
+import java.util.List;
 
 @RestController
 @RequestMapping("clientes")
 public class ClienteController {
 
-    @Autowired
-    private ClienteService clienteService;
+    private final ClienteService clienteService;
+
+    public ClienteController(ClienteService clienteService) {
+        this.clienteService = clienteService;
+    }
 
     @GetMapping
-    public String getAllClientes() {
-        return clienteService.getAllClientes();
+    public ResponseEntity<List<ClienteDto>> getAllClientes() {
+        return ResponseEntity.ok(clienteService.getAllClientes());
     }
 
     @GetMapping("/{id}")
-    public String getClienteById(@PathVariable Long id) {
-        return clienteService.getClienteById(id);
+    public ResponseEntity<ClienteDto> getClienteById(@PathVariable Long id) {
+        return ResponseEntity.ok(clienteService.getClienteById(id));
     }
 
     @PostMapping
-    public String createCliente(@RequestBody Cliente cliente) {
-        return clienteService.createCliente(cliente.toString());
+    public ResponseEntity<ClienteDto> createCliente(@Valid @RequestBody ClienteDto clienteDto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(clienteService.createCliente(clienteDto));
     }
 
     @PutMapping("/{id}")
-    public String updateCliente(@PathVariable Long id, @RequestBody Cliente cliente) {
-        return clienteService.updateCliente(id, cliente.toString());
+    public ResponseEntity<ClienteDto> updateCliente(@PathVariable Long id, @Valid @RequestBody ClienteDto clienteDto) {
+        return ResponseEntity.ok(clienteService.updateCliente(id, clienteDto));
     }
 
     @DeleteMapping("/{id}")
-    public String deleteCliente(@PathVariable Long id) {
-        return clienteService.deleteCliente(id);
+    public ResponseEntity<Void> deleteCliente(@PathVariable Long id) {
+        clienteService.deleteCliente(id);
+        return ResponseEntity.noContent().build();
     }
 }

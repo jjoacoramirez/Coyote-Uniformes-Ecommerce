@@ -1,9 +1,13 @@
 package com.coyoteuniformes.tienda_online.service;
 
+import com.coyoteuniformes.tienda_online.entity.dto.UsuarioDto;
+
+import java.util.List;
+
 public interface IUsuarioService {
-    String getAllUsuarios();
-    String getUsuarioById(Long id);
-    String createUsuario(String usuario);
-    String updateUsuario(Long id, String usuario);
-    String deleteUsuario(Long id);
+    List<UsuarioDto> getAllUsuarios();
+    UsuarioDto getUsuarioById(Long id);
+    UsuarioDto createUsuario(UsuarioDto usuarioDto);
+    UsuarioDto updateUsuario(Long id, UsuarioDto usuarioDto);
+    void deleteUsuario(Long id);
 }
