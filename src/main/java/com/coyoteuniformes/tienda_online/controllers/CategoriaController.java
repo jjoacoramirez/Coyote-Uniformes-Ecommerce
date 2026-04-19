@@ -1,5 +1,7 @@
 package com.coyoteuniformes.tienda_online.controllers;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,23 +16,23 @@ public class CategoriaController {
     private CategoriaService categoriaService;
 
     @GetMapping
-    public String getAllCategorias() {
+    public List<Categoria> getAllCategorias() {
         return categoriaService.getAllCategorias();
     }
 
     @GetMapping("/{id}")
-    public String getCategoriaById(@PathVariable Long id) {
+    public Categoria getCategoriaById(@PathVariable Long id) {
         return categoriaService.getCategoriaById(id);
     }
 
     @PostMapping
-    public String createCategoria(@RequestBody Categoria categoria) {
-        return categoriaService.createCategoria(categoria.toString());
+    public Categoria createCategoria(@RequestBody Categoria categoria) {
+        return categoriaService.createCategoria(categoria);
     }
 
     @PutMapping("/{id}")
-    public String updateCategoria(@PathVariable Long id, @RequestBody Categoria categoria) {
-        return categoriaService.updateCategoria(id, categoria.toString());
+    public Categoria updateCategoria(@PathVariable Long id, @RequestBody Categoria categoria) {
+        return categoriaService.updateCategoria(id, categoria);
     }
 
     @DeleteMapping("/{id}")

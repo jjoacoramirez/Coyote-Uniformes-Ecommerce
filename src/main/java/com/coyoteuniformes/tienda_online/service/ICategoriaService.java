@@ -1,9 +1,13 @@
 package com.coyoteuniformes.tienda_online.service;
 
+import java.util.List;
+
+import com.coyoteuniformes.tienda_online.entity.Categoria;
+
 public interface ICategoriaService {
-    String getAllCategorias();
-    String getCategoriaById(Long id);
-    String createCategoria(String categoria);
-    String updateCategoria(Long id, String categoria);
+    List<Categoria> getAllCategorias();
+    Categoria getCategoriaById(Long id);
+    Categoria createCategoria(Categoria categoria);
+    Categoria updateCategoria(Long id, Categoria categoria);
     String deleteCategoria(Long id);
 }
