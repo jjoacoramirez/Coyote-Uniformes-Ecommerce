@@ -1,5 +1,8 @@
 package com.coyoteuniformes.tienda_online.controllers;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,14 +24,15 @@ public class ProductoController {
     private ProductoService productoService;
 
     @GetMapping
-    public String getAllProductos() {
-        var result = productoService.getAllProductos();
+    public List<Producto> getAllProductos() {
+        List<Producto> result = productoService.getAllProductos();
         return result;
     }
 
     @GetMapping("/{id}")
-    public String getProductoById(@PathVariable Long id) {
-        return "Details of product with ID: " + id;
+    public Optional<Producto> getProductoById(@PathVariable Long id) {
+        Optional<Producto> result = productoService.getProductoById(id);
+        return result;
     }
 
     @PutMapping("/{id}")
@@ -37,15 +41,19 @@ public class ProductoController {
     }
 
     @PostMapping
-    public String createProducto(@RequestBody Producto producto) {
-        var result = productoService.createProducto(producto.toString());
+    public Producto createProducto(@RequestBody Producto producto) {
+        var result = productoService.createProducto(producto);
         return result;
     }
 
     @DeleteMapping("/{id}")
     public String deleteProducto(@PathVariable Long id) {
-        var result = productoService.deleteProducto(id);
-        return result;
+        try {
+            productoService.deleteProducto(id);
+            return "Producto eliminado correctamente";
+        } catch (Exception ex) {
+            return "No se pudo eliminar el producto: " + ex.getMessage();
+        }
     }
 
 }

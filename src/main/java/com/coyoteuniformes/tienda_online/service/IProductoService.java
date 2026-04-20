@@ -1,13 +1,18 @@
 package com.coyoteuniformes.tienda_online.service;
 
+import java.util.List;
+import java.util.Optional;
+
+import com.coyoteuniformes.tienda_online.entity.Producto;
+
 public interface IProductoService {
-    String getAllProductos();
+    List<Producto> getAllProductos();
 
-    String getProductoById(Long id);
+    Optional<Producto> getProductoById(Long id);
 
-    String updateProducto(Long id, String producto);
+    Producto updateProducto(Long id, Producto producto);
 
-    String createProducto(String producto);
+    Producto createProducto(Producto producto);
 
-    String deleteProducto(Long id);
+    void deleteProducto(Long id);
 }
