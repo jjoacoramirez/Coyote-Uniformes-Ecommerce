@@ -1,17 +1,19 @@
 package com.coyoteuniformes.tienda_online.entity;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
 
 @Entity
 @Table(name = "pagos")
@@ -23,7 +25,11 @@ public class Pago {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idPago;
-    private Long idPedido;
+
+    @ManyToOne
+    @JoinColumn(name = "idPedido", nullable = false)
+    private Pedido pedido;
+
     private LocalDate fechaPago;
     private BigDecimal monto;
     private String metodoPago;
