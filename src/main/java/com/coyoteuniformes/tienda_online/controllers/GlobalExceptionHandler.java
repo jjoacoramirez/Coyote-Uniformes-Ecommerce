@@ -2,6 +2,8 @@ package com.coyoteuniformes.tienda_online.controllers;
 
 import com.coyoteuniformes.tienda_online.exceptions.AdministradorException;
 import com.coyoteuniformes.tienda_online.exceptions.ClienteException;
+import com.coyoteuniformes.tienda_online.exceptions.DetallePedidoException;
+import com.coyoteuniformes.tienda_online.exceptions.PedidoException;
 import com.coyoteuniformes.tienda_online.exceptions.UsuarioException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -19,7 +21,13 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler({UsuarioException.class, ClienteException.class, AdministradorException.class})
+    @ExceptionHandler({
+            UsuarioException.class,
+            ClienteException.class,
+            AdministradorException.class,
+            PedidoException.class,
+            DetallePedidoException.class
+    })
     public ResponseEntity<Map<String, Object>> handleBusinessException(RuntimeException exception) {
         return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
