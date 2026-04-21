@@ -1,5 +1,8 @@
 package com.coyoteuniformes.tienda_online.controllers;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,27 +17,28 @@ public class CarritoController {
     private CarritoService carritoService;
 
     @GetMapping
-    public String getAllCarritos() {
+    public List<Carrito> getAllCarritos() {
         return carritoService.getAllCarritos();
     }
 
     @GetMapping("/{id}")
-    public String getCarritoById(@PathVariable Long id) {
+    public Optional<Carrito> getCarritoById(@PathVariable Long id) {
         return carritoService.getCarritoById(id);
     }
 
     @PostMapping
-    public String createCarrito(@RequestBody Carrito carrito) {
-        return carritoService.createCarrito(carrito.toString());
+    public Carrito createCarrito(@RequestBody Carrito carrito) {
+        return carritoService.createCarrito(carrito);
     }
 
     @PutMapping("/{id}")
-    public String updateCarrito(@PathVariable Long id, @RequestBody Carrito carrito) {
-        return carritoService.updateCarrito(id, carrito.toString());
+    public Carrito updateCarrito(@PathVariable Long id, @RequestBody Carrito carrito) {
+        return carritoService.updateCarrito(id, carrito);
     }
 
     @DeleteMapping("/{id}")
     public String deleteCarrito(@PathVariable Long id) {
-        return carritoService.deleteCarrito(id);
+        carritoService.deleteCarrito(id);
+        return "Carrito eliminado correctamente";
     }
 }

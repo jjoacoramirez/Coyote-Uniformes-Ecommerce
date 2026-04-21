@@ -1,8 +1,10 @@
 package com.coyoteuniformes.tienda_online.controllers;
 
 import com.coyoteuniformes.tienda_online.exceptions.AdministradorException;
+import com.coyoteuniformes.tienda_online.exceptions.CarritoException;
 import com.coyoteuniformes.tienda_online.exceptions.ClienteException;
 import com.coyoteuniformes.tienda_online.exceptions.DetallePedidoException;
+import com.coyoteuniformes.tienda_online.exceptions.ItemCarritoException;
 import com.coyoteuniformes.tienda_online.exceptions.PedidoException;
 import com.coyoteuniformes.tienda_online.exceptions.UsuarioException;
 import jakarta.validation.ConstraintViolationException;
@@ -26,7 +28,9 @@ public class GlobalExceptionHandler {
             ClienteException.class,
             AdministradorException.class,
             PedidoException.class,
-            DetallePedidoException.class
+            DetallePedidoException.class,
+            CarritoException.class,
+            ItemCarritoException.class
     })
     public ResponseEntity<Map<String, Object>> handleBusinessException(RuntimeException exception) {
         return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage());

@@ -1,9 +1,18 @@
 package com.coyoteuniformes.tienda_online.service;
 
+import com.coyoteuniformes.tienda_online.entity.Carrito;
+
+import java.util.List;
+import java.util.Optional;
+
 public interface ICarritoService {
-    String getAllCarritos();
-    String getCarritoById(Long id);
-    String createCarrito(String carrito);
-    String updateCarrito(Long id, String carrito);
-    String deleteCarrito(Long id);
+    List<Carrito> getAllCarritos();
+
+    Optional<Carrito> getCarritoById(Long id);
+
+    Carrito createCarrito(Carrito carrito);
+
+    Carrito updateCarrito(Long id, Carrito carrito);
+
+    void deleteCarrito(Long id);
 }
