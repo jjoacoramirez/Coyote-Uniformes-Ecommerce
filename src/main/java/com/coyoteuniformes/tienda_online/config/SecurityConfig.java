@@ -1,5 +1,6 @@
 package com.coyoteuniformes.tienda_online.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -34,11 +35,12 @@ public class SecurityConfig {
 
                 //auth publica
                 .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/error").permitAll()
 
                 //Lectura pública de catálogo
-                .requestMatchers(HttpMethod.GET, "/categorias/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/productos/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/variantes/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/categorias", "/categorias/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/productos", "/productos/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/variantes", "/variantes/**").permitAll()
 
                 //ABM de catálogo → solo ADMIN
                 .requestMatchers(HttpMethod.POST, "/categorias/**").hasRole("ADMIN")
@@ -51,9 +53,39 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/variantes/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/variantes/**").hasRole("ADMIN")
                 
+                //Gestión de usuarios/admins/clientes → solo ADMIN
+                .requestMatchers("/usuarios/**").hasRole("ADMIN")
+                .requestMatchers("/administradores/**").hasRole("ADMIN")
+                .requestMatchers("/clientes/**").hasRole("ADMIN")
+
+                // Carrito e items → USER y ADMIN (el usuario maneja su propio carrito)
+                .requestMatchers("/carritos/**").hasAnyRole("USER", "ADMIN")
+                .requestMatchers("/items-carrito/**").hasAnyRole("USER", "ADMIN")
+
+                // Pedidos → USER puede crear y ver, solo ADMIN puede modificar o eliminar
+                .requestMatchers(HttpMethod.GET,    "/pedidos/**").hasAnyRole("USER", "ADMIN")
+                .requestMatchers(HttpMethod.POST,   "/pedidos/**").hasAnyRole("USER", "ADMIN")
+                .requestMatchers(HttpMethod.PUT,    "/pedidos/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/pedidos/**").hasRole("ADMIN")
+
+                // Detalles y pagos → solo lectura para USER, escritura solo ADMIN
+                .requestMatchers(HttpMethod.GET,    "/detalles-pedido/**").hasAnyRole("USER", "ADMIN")
+                .requestMatchers(HttpMethod.POST,   "/detalles-pedido/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT,    "/detalles-pedido/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/detalles-pedido/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET,    "/pagos/**").hasAnyRole("USER", "ADMIN")
+                .requestMatchers(HttpMethod.POST,   "/pagos/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT,    "/pagos/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/pagos/**").hasRole("ADMIN")
+
                 //Todos los demas requieren auth
                 .anyRequest().authenticated()
             )
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) ->
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
+                .accessDeniedHandler((request, response, accessDeniedException) ->
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden")))
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
