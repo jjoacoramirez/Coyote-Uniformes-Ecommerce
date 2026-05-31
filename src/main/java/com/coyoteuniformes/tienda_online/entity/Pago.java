@@ -27,7 +27,7 @@ public class Pago {
     private Long idPago;
 
     @ManyToOne
-    @JoinColumn(name = "idPedido", nullable = false)
+    @JoinColumn(name = "id_pedido", nullable = false)
     private Pedido pedido;
 
     private LocalDate fechaPago;

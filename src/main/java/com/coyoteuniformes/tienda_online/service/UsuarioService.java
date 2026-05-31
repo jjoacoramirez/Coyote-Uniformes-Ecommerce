@@ -78,7 +78,8 @@ public class UsuarioService implements IUsuarioService {
         }
 
         if (usuario.getAdministrador() != null && !UsuarioRoles.ADMINISTRADOR.equals(rol)) {
-            throw new UsuarioException("El usuario tiene un perfil de administrador y su rol debe seguir siendo ADMINISTRADOR");
+            throw new UsuarioException(
+                    "El usuario tiene un perfil de administrador y su rol debe seguir siendo ADMINISTRADOR");
         }
 
         usuario.setNombre(normalizeRequired(usuarioDto.getNombre(), "El nombre es obligatorio"));
@@ -101,7 +102,8 @@ public class UsuarioService implements IUsuarioService {
         }
 
         if (usuario.getAdministrador() != null) {
-            throw new UsuarioException("No se puede eliminar el usuario porque tiene un perfil de administrador asociado");
+            throw new UsuarioException(
+                    "No se puede eliminar el usuario porque tiene un perfil de administrador asociado");
         }
 
         usuarioRepository.delete(usuario);
@@ -138,7 +140,7 @@ public class UsuarioService implements IUsuarioService {
     private String normalizeRol(String rol) {
         String normalizedRol = normalizeRequired(rol, "El rol es obligatorio").toUpperCase();
         if (!UsuarioRoles.CLIENTE.equals(normalizedRol) && !UsuarioRoles.ADMINISTRADOR.equals(normalizedRol)) {
-            throw new UsuarioException("El rol debe ser CLIENTE o ADMINISTRADOR");
+            throw new UsuarioException("El rol debe ser USER (cliente) o ADMIN (administrador)");
         }
         return normalizedRol;
     }
