@@ -1,9 +1,13 @@
 package com.coyoteuniformes.tienda_online.config;
 
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -29,6 +33,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csfr -> csfr.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
@@ -67,6 +72,13 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST,   "/pedidos/**").hasAnyRole("USER", "ADMIN")
                 .requestMatchers(HttpMethod.PUT,    "/pedidos/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/pedidos/**").hasRole("ADMIN")
+
+                // Descuentos: validar es público, ABM solo ADMIN
+                .requestMatchers(HttpMethod.GET, "/descuentos/validar/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/descuentos", "/descuentos/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/descuentos/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/descuentos/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/descuentos/**").hasRole("ADMIN")
 
                 // Detalles y pagos → solo lectura para USER, escritura solo ADMIN
                 .requestMatchers(HttpMethod.GET,    "/detalles-pedido/**").hasAnyRole("USER", "ADMIN")
@@ -107,5 +119,17 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of("http://localhost:5173"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 }

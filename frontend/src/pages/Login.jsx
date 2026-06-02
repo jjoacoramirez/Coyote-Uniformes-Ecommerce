@@ -10,16 +10,16 @@ function Login() {
   const navigate = useNavigate()
   const { login } = useAuth()
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    const result = login(email, password)
+    const result = await login(email, password)
 
     if (!result.ok) {
       setError(result.message)
       return
     }
 
-    navigate(result.user.role === 'admin' ? '/admin' : '/productos/buzo-capucha-cst')
+    navigate(result.user.role === 'admin' ? '/admin' : '/productos')
   }
 
   return (

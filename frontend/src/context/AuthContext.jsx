@@ -1,8 +1,21 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useMemo, useState } from 'react'
-import { demoUsers } from '../data/users.js'
+import { api } from '../services/api.js'
 
 const AuthContext = createContext(null)
+
+function decodeToken(token) {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    const rawRole = payload.roles?.[0]?.authority ?? 'ROLE_USER'
+    return {
+      email: payload.sub,
+      role: rawRole === 'ROLE_ADMIN' ? 'admin' : 'cliente',
+    }
+  } catch {
+    return null
+  }
+}
 
 function getStoredUser() {
   const rawUser = localStorage.getItem('coyote_user')
@@ -12,26 +25,20 @@ function getStoredUser() {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(getStoredUser)
 
-  const login = (email, password) => {
-    const foundUser = demoUsers.find(
-      (demoUser) =>
-        demoUser.email.toLowerCase() === email.toLowerCase() && demoUser.password === password,
-    )
+  const login = async (email, password) => {
+    try {
+      const { token } = await api.post('/auth/login', { email, password })
+      const decoded = decodeToken(token)
+      if (!decoded) return { ok: false, message: 'Error al procesar el token.' }
 
-    if (!foundUser) {
-      return { ok: false, message: 'Correo o contrasena incorrectos.' }
+      localStorage.setItem('coyote_token', token)
+      const sessionUser = { email: decoded.email, role: decoded.role }
+      localStorage.setItem('coyote_user', JSON.stringify(sessionUser))
+      setUser(sessionUser)
+      return { ok: true, user: sessionUser }
+    } catch (err) {
+      return { ok: false, message: err.message ?? 'Correo o contrasena incorrectos.' }
     }
-
-    const sessionUser = {
-      id: foundUser.id,
-      name: foundUser.name,
-      email: foundUser.email,
-      role: foundUser.role,
-    }
-
-    localStorage.setItem('coyote_user', JSON.stringify(sessionUser))
-    setUser(sessionUser)
-    return { ok: true, user: sessionUser }
   }
 
   const register = (formData) => {
@@ -41,13 +48,13 @@ export function AuthProvider({ children }) {
       email: formData.email,
       role: 'cliente',
     }
-
     localStorage.setItem('coyote_user', JSON.stringify(sessionUser))
     setUser(sessionUser)
     return sessionUser
   }
 
   const logout = () => {
+    localStorage.removeItem('coyote_token')
     localStorage.removeItem('coyote_user')
     setUser(null)
   }

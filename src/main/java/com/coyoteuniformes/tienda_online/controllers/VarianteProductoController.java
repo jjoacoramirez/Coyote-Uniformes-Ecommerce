@@ -21,6 +21,11 @@ public class VarianteProductoController {
         return varianteProductoService.getAllVariantes();
     }
 
+    @GetMapping("/producto/{productoId}")
+    public List<VarianteProducto> getVariantesByProducto(@PathVariable Long productoId) {
+        return varianteProductoService.getVariantesByProductoId(productoId);
+    }
+
     @GetMapping("/{id}")
     public Optional<VarianteProducto> getVarianteById(@PathVariable Long id) {
         return varianteProductoService.getVarianteById(id);

@@ -1,3 +1,4 @@
+import Formulario from '../components/Formulario.jsx'
 import Layout from '../components/Layout.jsx'
 
 function Contact() {
@@ -11,34 +12,7 @@ function Contact() {
         </div>
 
         <div className="contact-grid">
-          <form className="form-panel">
-            <h2>Envianos un mensaje</h2>
-            <div className="form-grid">
-              <label>
-                Nombre
-                <input placeholder="Tu nombre" />
-              </label>
-              <label>
-                Correo
-                <input type="email" placeholder="mail@empresa.com" />
-              </label>
-              <label className="wide">
-                Motivo de consulta
-                <select defaultValue="Uniformes escolares">
-                  <option>Uniformes escolares</option>
-                  <option>Uniformes medicos</option>
-                  <option>Compra mayorista</option>
-                </select>
-              </label>
-              <label className="wide">
-                Mensaje
-                <textarea placeholder="Contanos que necesitas" />
-              </label>
-            </div>
-            <button className="button primary" type="button">
-              Enviar mensaje
-            </button>
-          </form>
+          <Formulario />
 
           <aside className="contact-card">
             <h2>Atencion directa</h2>

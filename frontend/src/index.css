@@ -644,6 +644,29 @@ p {
   font-weight: 800;
 }
 
+.size-select {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 16px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.size-select:focus {
+  outline: 2px solid var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.size-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .tab-panel {
   margin-top: 28px;
   padding: 18px;
@@ -920,6 +943,50 @@ p {
   background: #f8edf1;
   border-radius: 6px;
   font-size: 0.9rem;
+}
+
+.coupon-field {
+  margin: 16px 0;
+}
+
+.coupon-form {
+  display: flex;
+  gap: 8px;
+}
+
+.coupon-form input {
+  flex: 1;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
+  font: inherit;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.coupon-form input:focus {
+  outline: 2px solid var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.coupon-applied {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--color-success);
+  border-radius: var(--radius);
+  font-size: 0.92rem;
+}
+
+.coupon-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-muted);
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .form-panel {
