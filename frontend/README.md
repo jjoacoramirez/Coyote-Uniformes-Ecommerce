@@ -67,3 +67,10 @@ Detalle de producto: vista individual de cada producto.
 Carrito: resumen de productos seleccionados.
 Login: acceso de usuarios.
 Administración: vistas destinadas a la gestión interna del ecommerce.
+
+Importar Base de Datos:
+
+En MySQL en la pestaña "Server" seleccionar "Data Import"
+Dentro de "Data Import" seleccionar "import from Self-Contained File"
+Elegir la ruta del archivo .sql
+Clickear "Start Import"

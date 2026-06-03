@@ -14,7 +14,6 @@ function Header() {
         <NavLink to="/">Inicio</NavLink>
         <NavLink to="/productos">Productos</NavLink>
         <NavLink to="/contacto">Contacto</NavLink>
-        {user?.role === 'admin' && <NavLink to="/admin/productos">Admin</NavLink>}
       </nav>
 
       <div className="header-actions" aria-label="Acciones de usuario">
