@@ -1,16 +1,69 @@
-# React + Vite
+# Coyote Uniformes Ecommerce
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Proyecto web de ecommerce para **Coyote Uniformes**, orientado a la venta y gestión de uniformes.
 
-Currently, two official plugins are available:
+En esta etapa se desarrolló principalmente el **frontend con React**, incluyendo navegación entre vistas, catálogo de productos, carrito de compras, login y vistas de administración.  
+El proyecto también cuenta con un backend desarrollado con **Spring Boot**, utilizado como API para la gestión de datos.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## Tecnologías principales
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React
+- Vite
+- React Router
+- CSS
+- Spring Boot
+- Maven
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Estructura general del proyecto
+
+CoyoteUniformes/
+│
+├── frontend/          # Aplicación frontend en React
+│
+├── src/               # Código fuente del backend Spring Boot
+│
+├── pom.xml            # Configuración de Maven
+│
+├── mvnw.cmd           # Wrapper de Maven para Windows
+│
+└── README.md
+Cómo ejecutar el frontend
+
+Primero ingresar a la carpeta del frontend:
+
+cd frontend
+
+Instalar las dependencias:
+
+npm install
+
+Levantar el servidor de desarrollo:
+
+npm run dev
+
+Luego abrir en el navegador:
+
+http://localhost:5173
+Cómo ejecutar el backend
+
+Desde la raíz del proyecto, ejecutar:
+
+mvnw.cmd spring-boot:run
+
+La API queda disponible en:
+
+http://localhost:8080/api
+Vistas principales del frontend
+
+El frontend incluye las siguientes vistas principales:
+
+Inicio: página principal del sitio.
+Productos: catálogo de uniformes disponibles.
+Detalle de producto: vista individual de cada producto.
+Carrito: resumen de productos seleccionados.
+Login: acceso de usuarios.
+Administración: vistas destinadas a la gestión interna del ecommerce.
