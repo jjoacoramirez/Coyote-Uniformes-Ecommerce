@@ -3,9 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import Layout from '../components/Layout.jsx'
 import ProductCard from '../components/ProductCard.jsx'
 import ToastNotif from '../components/ToastNotif.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../services/api.js'
-
-const sizeFilters = ['XS', 'S', 'M', 'L', 'XL']
 
 function toProductShape(producto) {
   const categoriaNombre = producto.categoria?.nombre ?? producto.Categoria?.nombre
@@ -24,7 +23,6 @@ function Products() {
   const [searchParams] = useSearchParams()
   const initialCategory = searchParams.get('categoria') ?? 'all'
   const [category, setCategory] = useState(initialCategory)
-  const [size, setSize] = useState('all')
   const [sort, setSort] = useState('relevance')
   const [toast, setToast] = useState('')
   const [products, setProducts] = useState([])
@@ -32,6 +30,7 @@ function Products() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   useEffect(() => {
     Promise.all([api.get('/productos'), api.get('/categorias')])
@@ -50,9 +49,7 @@ function Products() {
 
   const filteredProducts = useMemo(() => {
     const filtered = products.filter((product) => {
-      const matchesCategory = category === 'all' || product.category === category
-      const matchesSize = size === 'all' || product.sizes.includes(size)
-      return matchesCategory && matchesSize
+      return category === 'all' || product.category === category
     })
 
     if (sort === 'price-asc') {
@@ -64,11 +61,15 @@ function Products() {
     }
 
     return filtered
-  }, [products, category, size, sort])
+  }, [products, category, sort])
 
   const handleAdd = (product) => {
-    setToast(`${product.name} requiere iniciar sesion`)
-    window.setTimeout(() => navigate('/login'), 900)
+    if (!user) {
+      setToast(`${product.name} requiere iniciar sesion`)
+      window.setTimeout(() => navigate('/login'), 900)
+      return
+    }
+    navigate(`/productos/${product.id}`)
   }
 
   return (
@@ -90,29 +91,6 @@ function Products() {
                 {filter.label}
               </label>
             ))}
-          </div>
-
-          <div className="filter-group">
-            <span>Talla</span>
-            <div className="size-filter-row">
-              <button
-                type="button"
-                className={size === 'all' ? 'selected' : ''}
-                onClick={() => setSize('all')}
-              >
-                Todas
-              </button>
-              {sizeFilters.map((value) => (
-                <button
-                  type="button"
-                  key={value}
-                  className={size === value ? 'selected' : ''}
-                  onClick={() => setSize(value)}
-                >
-                  {value}
-                </button>
-              ))}
-            </div>
           </div>
 
           <label className="filter-group">
@@ -138,7 +116,7 @@ function Products() {
             {loading && <p>Cargando productos...</p>}
             {error && <p className="form-error">{error}</p>}
             {!loading && !error && filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} onAdd={handleAdd} />
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
         </section>

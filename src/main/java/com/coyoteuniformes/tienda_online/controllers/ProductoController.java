@@ -1,6 +1,7 @@
 package com.coyoteuniformes.tienda_online.controllers;
 
 import com.coyoteuniformes.tienda_online.entity.Producto;
+import com.coyoteuniformes.tienda_online.entity.dto.ProductoAdminDto;
 import com.coyoteuniformes.tienda_online.entity.dto.ProductoDto;
 import com.coyoteuniformes.tienda_online.service.ProductoService;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,11 @@ public class ProductoController {
     @GetMapping
     public List<Producto> getAllProductos() {
         return productoService.getAllProductos();
+    }
+
+    @GetMapping("/admin")
+    public ResponseEntity<List<ProductoAdminDto>> getProductosAdmin() {
+        return ResponseEntity.ok(productoService.getProductosAdmin());
     }
 
     @GetMapping("/{id}")

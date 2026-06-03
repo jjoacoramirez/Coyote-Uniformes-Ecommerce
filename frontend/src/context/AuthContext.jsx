@@ -22,35 +22,45 @@ function getStoredUser() {
   return rawUser ? JSON.parse(rawUser) : null
 }
 
+function storeSession(token) {
+  const decoded = decodeToken(token)
+  if (!decoded) return null
+  localStorage.setItem('coyote_token', token)
+  const sessionUser = { email: decoded.email, role: decoded.role }
+  localStorage.setItem('coyote_user', JSON.stringify(sessionUser))
+  return sessionUser
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(getStoredUser)
 
   const login = async (email, password) => {
     try {
       const { token } = await api.post('/auth/login', { email, password })
-      const decoded = decodeToken(token)
-      if (!decoded) return { ok: false, message: 'Error al procesar el token.' }
-
-      localStorage.setItem('coyote_token', token)
-      const sessionUser = { email: decoded.email, role: decoded.role }
-      localStorage.setItem('coyote_user', JSON.stringify(sessionUser))
+      const sessionUser = storeSession(token)
+      if (!sessionUser) return { ok: false, message: 'Error al procesar el token.' }
       setUser(sessionUser)
       return { ok: true, user: sessionUser }
     } catch (err) {
-      return { ok: false, message: err.message ?? 'Correo o contrasena incorrectos.' }
+      return { ok: false, message: err.message ?? 'Correo o contraseña incorrectos.' }
     }
   }
 
-  const register = (formData) => {
-    const sessionUser = {
-      id: Date.now(),
-      name: `${formData.name} ${formData.lastName}`.trim(),
-      email: formData.email,
-      role: 'cliente',
+  const register = async (formData) => {
+    try {
+      const { token } = await api.post('/auth/register', {
+        nombre:     formData.name,
+        apellido:   formData.lastName,
+        email:      formData.email,
+        contrasena: formData.password,
+      })
+      const sessionUser = storeSession(token)
+      if (!sessionUser) return { ok: false, message: 'Error al procesar el token.' }
+      setUser(sessionUser)
+      return { ok: true, user: sessionUser }
+    } catch (err) {
+      return { ok: false, message: err.message ?? 'Error al crear la cuenta.' }
     }
-    localStorage.setItem('coyote_user', JSON.stringify(sessionUser))
-    setUser(sessionUser)
-    return sessionUser
   }
 
   const logout = () => {

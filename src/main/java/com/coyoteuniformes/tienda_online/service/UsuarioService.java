@@ -1,6 +1,8 @@
 package com.coyoteuniformes.tienda_online.service;
 
 import com.coyoteuniformes.tienda_online.entity.Usuario;
+import com.coyoteuniformes.tienda_online.entity.dto.CambiarPasswordDto;
+import com.coyoteuniformes.tienda_online.entity.dto.PerfilUpdateDto;
 import com.coyoteuniformes.tienda_online.entity.dto.UsuarioDto;
 import com.coyoteuniformes.tienda_online.exceptions.UsuarioException;
 import com.coyoteuniformes.tienda_online.repository.UsuarioRepository;
@@ -108,9 +110,39 @@ public class UsuarioService implements IUsuarioService {
     }
 
     @Transactional(readOnly = true)
+    public UsuarioDto getPerfilByEmail(String email) {
+        return toDto(findUsuarioByEmail(email));
+    }
+
+    public UsuarioDto updatePerfilByEmail(String email, PerfilUpdateDto dto) {
+        Usuario usuario = findUsuarioByEmail(email);
+        if (StringUtils.hasText(dto.getNombre())) usuario.setNombre(dto.getNombre().trim());
+        if (StringUtils.hasText(dto.getApellido())) usuario.setApellido(dto.getApellido().trim());
+        usuario.setTelefono(normalizeOptional(dto.getTelefono()));
+        return toDto(usuarioRepository.save(usuario));
+    }
+
+    public void cambiarPassword(String email, CambiarPasswordDto dto) {
+        Usuario usuario = findUsuarioByEmail(email);
+        if (!passwordEncoder.matches(dto.getContrasenaActual(), usuario.getContrasena())) {
+            throw new UsuarioException("La contraseña actual es incorrecta");
+        }
+        if (!StringUtils.hasText(dto.getContrasenaNueva()) || dto.getContrasenaNueva().trim().length() < 6) {
+            throw new UsuarioException("La nueva contraseña debe tener al menos 6 caracteres");
+        }
+        usuario.setContrasena(passwordEncoder.encode(dto.getContrasenaNueva().trim()));
+        usuarioRepository.save(usuario);
+    }
+
+    @Transactional(readOnly = true)
     public Usuario findUsuarioById(Long id) {
         return usuarioRepository.findById(id)
                 .orElseThrow(() -> new UsuarioException("No existe un usuario con ID " + id));
+    }
+
+    private Usuario findUsuarioByEmail(String email) {
+        return usuarioRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new UsuarioException("No existe un usuario con el email " + email));
     }
 
     private UsuarioDto toDto(Usuario usuario) {

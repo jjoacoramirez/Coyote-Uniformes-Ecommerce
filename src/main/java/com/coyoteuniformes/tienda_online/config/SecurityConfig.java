@@ -43,7 +43,9 @@ public class SecurityConfig {
                 .requestMatchers("/error").permitAll()
 
                 //Lectura pública de catálogo
+                .requestMatchers(HttpMethod.GET, "/categorias/admin").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/categorias", "/categorias/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/productos/admin").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/productos", "/productos/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/variantes", "/variantes/**").permitAll()
 
@@ -58,6 +60,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/variantes/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/variantes/**").hasRole("ADMIN")
                 
+                //Perfil propio → cualquier usuario autenticado
+                .requestMatchers(HttpMethod.GET, "/usuarios/me").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/usuarios/me").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/usuarios/me/password").authenticated()
+
                 //Gestión de usuarios/admins/clientes → solo ADMIN
                 .requestMatchers("/usuarios/**").hasRole("ADMIN")
                 .requestMatchers("/administradores/**").hasRole("ADMIN")

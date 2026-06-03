@@ -3,9 +3,11 @@ package com.coyoteuniformes.tienda_online.controllers;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.coyoteuniformes.tienda_online.entity.Categoria;
+import com.coyoteuniformes.tienda_online.entity.dto.CategoriaAdminDto;
 import com.coyoteuniformes.tienda_online.service.CategoriaService;
 
 @RestController
@@ -18,6 +20,11 @@ public class CategoriaController {
     @GetMapping
     public List<Categoria> getAllCategorias() {
         return categoriaService.getAllCategorias();
+    }
+
+    @GetMapping("/admin")
+    public ResponseEntity<List<CategoriaAdminDto>> getCategoriasAdmin() {
+        return ResponseEntity.ok(categoriaService.getCategoriasAdmin());
     }
 
     @GetMapping("/{id}")

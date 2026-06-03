@@ -1,5 +1,12 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
-import AdminDashboard from './pages/AdminDashboard.jsx'
+import AdminLayout from './pages/admin/AdminLayout.jsx'
+import UserAccount from './pages/UserAccount.jsx'
+import AdminCategorias from './pages/admin/AdminCategorias.jsx'
+import AdminCategoriaForm from './pages/admin/AdminCategoriaForm.jsx'
+import AdminCupones from './pages/admin/AdminCupones.jsx'
+import AdminCuponForm from './pages/admin/AdminCuponForm.jsx'
+import AdminProductoForm from './pages/admin/AdminProductoForm.jsx'
+import AdminProductos from './pages/admin/AdminProductos.jsx'
 import Cart from './pages/Cart.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import Confirmation from './pages/Confirmation.jsx'
@@ -25,14 +32,28 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/contacto" element={<Contact />} />
+      <Route path="/mi-cuenta" element={<UserAccount />} />
+
       <Route
         path="/admin"
         element={
           <ProtectedRoute role="admin">
-            <AdminDashboard />
+            <AdminLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<Navigate to="productos" replace />} />
+        <Route path="productos" element={<AdminProductos />} />
+        <Route path="productos/nuevo" element={<AdminProductoForm />} />
+        <Route path="productos/:id/editar" element={<AdminProductoForm />} />
+        <Route path="categorias" element={<AdminCategorias />} />
+        <Route path="categorias/nuevo" element={<AdminCategoriaForm />} />
+        <Route path="categorias/:id/editar" element={<AdminCategoriaForm />} />
+        <Route path="cupones" element={<AdminCupones />} />
+        <Route path="cupones/nuevo" element={<AdminCuponForm />} />
+        <Route path="cupones/:id/editar" element={<AdminCuponForm />} />
+      </Route>
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

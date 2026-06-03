@@ -2,6 +2,7 @@ package com.coyoteuniformes.tienda_online.service;
 
 import com.coyoteuniformes.tienda_online.entity.Categoria;
 import com.coyoteuniformes.tienda_online.entity.Producto;
+import com.coyoteuniformes.tienda_online.entity.dto.ProductoAdminDto;
 import com.coyoteuniformes.tienda_online.entity.dto.ProductoDto;
 import com.coyoteuniformes.tienda_online.exceptions.ProductoException;
 import com.coyoteuniformes.tienda_online.repository.CategoriaRepository;
@@ -25,6 +26,11 @@ public class ProductoService implements IProductoService {
     @Override
     public List<Producto> getAllProductos() {
         return productoRepository.findAll();
+    }
+
+    @Override
+    public List<ProductoAdminDto> getProductosAdmin() {
+        return productoRepository.findProductosAdmin();
     }
 
     @Override

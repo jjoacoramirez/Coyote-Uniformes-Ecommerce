@@ -49,7 +49,7 @@ function Home() {
         </div>
 
         {featuredProducts.map((product) => (
-          <ProductCard key={product.id} product={product} onAdd={() => {}} />
+          <ProductCard key={product.id} product={product} />
         ))}
       </section>
     </Layout>

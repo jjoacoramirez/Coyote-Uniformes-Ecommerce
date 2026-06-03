@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.coyoteuniformes.tienda_online.entity.Categoria;
+import com.coyoteuniformes.tienda_online.entity.dto.CategoriaAdminDto;
 import com.coyoteuniformes.tienda_online.repository.CategoriaRepository;
 
 @Service
@@ -16,7 +17,11 @@ public class CategoriaService implements ICategoriaService {
     }
 
     public List<Categoria> getAllCategorias() {
-        return categoriaRepository.findAll(); 
+        return categoriaRepository.findAll();
+    }
+
+    public List<CategoriaAdminDto> getCategoriasAdmin() {
+        return categoriaRepository.findCategoriasAdmin();
     }
 
     public Categoria getCategoriaById(Long id) {
