@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { formatPrice } from '../data/products.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useCart } from '../context/CartContext.jsx'
-import TabGroup from './TabGroup.jsx'
 
 function unique(arr) {
   return [...new Set(arr.filter(Boolean))]
@@ -117,7 +116,6 @@ function ProductDetail({ product, onAddToCart }) {
           Agregar al carrito
         </button>
 
-        <TabGroup product={product} />
       </div>
     </section>
   )

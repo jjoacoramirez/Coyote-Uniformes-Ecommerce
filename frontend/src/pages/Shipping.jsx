@@ -16,34 +16,35 @@ function Shipping() {
             <div className="form-grid">
               <label>
                 Nombre completo
-                <input defaultValue="Joaquin Ramirez" />
+                <input placeholder="Nombre y apellido" />
               </label>
               <label>
                 Correo electronico
-                <input defaultValue="joaquin@email.com" />
+                <input placeholder="correo@empresa.com" />
               </label>
               <label>
                 Telefono
-                <input defaultValue="+54 11 4000 0000" />
+                <input placeholder="+54 11 4000 0000" />
               </label>
               <label>
                 Codigo postal
-                <input defaultValue="1638" />
+                <input placeholder="Codigo postal" />
               </label>
               <label>
                 Provincia
-                <select defaultValue="Buenos Aires">
+                <select defaultValue="">
+                  <option value="" disabled>Seleccionar provincia</option>
                   <option>Buenos Aires</option>
                   <option>CABA</option>
                 </select>
               </label>
               <label>
                 Ciudad
-                <input defaultValue="Vicente Lopez" />
+                <input placeholder="Ciudad" />
               </label>
               <label className="wide">
                 Direccion
-                <input defaultValue="Sarmiento 1728" />
+                <input placeholder="Calle y numero" />
               </label>
               <label>
                 Piso / Depto

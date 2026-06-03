@@ -4,13 +4,42 @@ import { api } from '../services/api.js'
 
 const AuthContext = createContext(null)
 
+function normalizeRole(rawRole) {
+  const normalizedRole = String(rawRole ?? '').toUpperCase()
+  return normalizedRole.includes('ADMIN') ? 'admin' : 'cliente'
+}
+
+function extractRole(payload) {
+  const roles = payload.roles ?? payload.role ?? payload.authorities ?? payload.authority
+
+  if (Array.isArray(roles)) {
+    const adminRole = roles.find((role) => normalizeRole(
+      role?.authority ?? role?.role ?? role?.name ?? role
+    ) === 'admin')
+    const selectedRole = adminRole ?? roles[0]
+    return selectedRole?.authority ?? selectedRole?.role ?? selectedRole?.name ?? selectedRole
+  }
+
+  return roles
+}
+
+function decodeJwtPayload(token) {
+  const base64Url = token.split('.')[1]
+  if (!base64Url) return null
+
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+  const paddedBase64 = base64.padEnd(base64.length + ((4 - base64.length % 4) % 4), '=')
+  return JSON.parse(decodeURIComponent(escape(atob(paddedBase64))))
+}
+
 function decodeToken(token) {
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]))
-    const rawRole = payload.roles?.[0]?.authority ?? 'ROLE_USER'
+    const payload = decodeJwtPayload(token)
+    if (!payload) return null
+    const rawRole = extractRole(payload) ?? 'ROLE_USER'
     return {
       email: payload.sub,
-      role: rawRole === 'ROLE_ADMIN' ? 'admin' : 'cliente',
+      role: normalizeRole(rawRole),
     }
   } catch {
     return null
@@ -18,8 +47,22 @@ function decodeToken(token) {
 }
 
 function getStoredUser() {
-  const rawUser = localStorage.getItem('coyote_user')
-  return rawUser ? JSON.parse(rawUser) : null
+  const token = localStorage.getItem('coyote_token')
+  if (!token) {
+    localStorage.removeItem('coyote_user')
+    return null
+  }
+
+  const decoded = decodeToken(token)
+  if (!decoded) {
+    localStorage.removeItem('coyote_token')
+    localStorage.removeItem('coyote_user')
+    return null
+  }
+
+  const sessionUser = { email: decoded.email, role: decoded.role }
+  localStorage.setItem('coyote_user', JSON.stringify(sessionUser))
+  return sessionUser
 }
 
 function storeSession(token) {
@@ -29,6 +72,14 @@ function storeSession(token) {
   const sessionUser = { email: decoded.email, role: decoded.role }
   localStorage.setItem('coyote_user', JSON.stringify(sessionUser))
   return sessionUser
+}
+
+function getFriendlyLoginMessage(message) {
+  if (!message || message === 'Bad credentials' || message.startsWith('Error 401')) {
+    return 'Correo o contraseña incorrectos. Verifica los datos e intenta nuevamente.'
+  }
+
+  return message
 }
 
 export function AuthProvider({ children }) {
@@ -42,6 +93,9 @@ export function AuthProvider({ children }) {
       setUser(sessionUser)
       return { ok: true, user: sessionUser }
     } catch (err) {
+      if (!err.message || err.message === 'Bad credentials' || err.message.startsWith('Error 401')) {
+        return { ok: false, message: getFriendlyLoginMessage(err.message) }
+      }
       return { ok: false, message: err.message ?? 'Correo o contraseña incorrectos.' }
     }
   }

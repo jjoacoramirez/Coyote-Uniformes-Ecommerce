@@ -7,7 +7,7 @@ function HeroBanner() {
         <p className="eyebrow">Uniformes institucionales</p>
         <h1>Tu uniforme, nuestra especialidad</h1>
         <p>
-          Disenamos prendas comodas, resistentes y listas para representar la identidad de
+          Diseñamos prendas comodas, resistentes y listas para representar la identidad de
           cada equipo.
         </p>
         <div className="button-row">

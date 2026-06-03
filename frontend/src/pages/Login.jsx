@@ -4,8 +4,8 @@ import { useAuth } from '../context/AuthContext.jsx'
 
 function Login() {
   const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState('cliente@coyote.com')
-  const [password, setPassword] = useState('Cliente123')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const navigate = useNavigate()
   const { login } = useAuth()
@@ -38,7 +38,7 @@ function Login() {
           />
         </label>
         <label>
-          Contrasena
+          Contraseña
           <div className="password-field">
             <input
               type={showPassword ? 'text' : 'password'}
@@ -53,11 +53,6 @@ function Login() {
           </div>
         </label>
         {error && <p className="form-error">{error}</p>}
-        <div className="demo-accounts">
-          <strong>Cuentas de prueba</strong>
-          <span>Cliente: cliente@coyote.com / Cliente123</span>
-          <span>Admin: admin@coyote.com / Admin123</span>
-        </div>
         <button className="button primary full" type="submit">
           Iniciar sesion
         </button>

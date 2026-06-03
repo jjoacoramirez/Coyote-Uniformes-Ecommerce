@@ -2,7 +2,7 @@ import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 
 function Header() {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
 
   return (
     <header className="site-header">
@@ -14,6 +14,7 @@ function Header() {
         <NavLink to="/">Inicio</NavLink>
         <NavLink to="/productos">Productos</NavLink>
         <NavLink to="/contacto">Contacto</NavLink>
+        {user?.role === 'admin' && <NavLink to="/admin/productos">Admin</NavLink>}
       </nav>
 
       <div className="header-actions" aria-label="Acciones de usuario">

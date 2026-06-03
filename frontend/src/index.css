@@ -173,7 +173,7 @@ p {
   padding: clamp(48px, 8vw, 92px) clamp(18px, 5vw, 70px);
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.75) 42%, rgba(255, 255, 255, 0.22) 100%),
-    url('https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1800&q=80')
+    url('./assets/banner.png')
       center/cover;
 }
 
@@ -1180,23 +1180,48 @@ p {
   padding: 26px;
 }
 
-.map-box {
+.social-box {
   display: grid;
-  min-height: 240px;
-  align-content: end;
-  gap: 12px;
+  gap: 14px;
   margin-top: 18px;
   padding: 18px;
-  background:
-    linear-gradient(rgba(43, 63, 92, 0.74), rgba(43, 63, 92, 0.74)),
-    url('https://images.unsplash.com/photo-1569336415962-a4bd9f69c07b?auto=format&fit=crop&w=900&q=80')
-      center/cover;
+  background: #f8edf1;
+  border: 1px solid #ead1da;
   border-radius: var(--radius);
 }
 
-.map-box span {
-  color: #ffffff;
+.social-box span {
+  color: var(--color-primary);
   font-weight: 800;
+}
+
+.social-box p {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.social-links {
+  display: grid;
+  gap: 10px;
+}
+
+.social-links a {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  color: var(--color-ink);
+  background: #ffffff;
+  border: 1px solid #ead1da;
+  border-radius: 8px;
+}
+
+.social-links a:hover {
+  color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.social-links small {
+  color: var(--color-muted);
 }
 
 .wholesale-banner {
@@ -3441,4 +3466,8 @@ p {
 
 .up-admin-btn:hover {
   background: rgba(255, 255, 255, 0.22);
+}
+
+.admin-topbar-actions button:last-of-type {
+  display: none;
 }

@@ -19,11 +19,20 @@ function Contact() {
             <p>Sarmiento 1728, Florida, Vicente Lopez</p>
             <p>WhatsApp: +54 11 5555 1200</p>
             <p>Email: contacto@coyoteuniformes.com</p>
-            <div className="map-box">
-              <span>Mapa de ubicacion</span>
-              <a className="button secondary" href="https://maps.google.com" target="_blank">
-                Ver en Google Maps
-              </a>
+
+            <div className="social-box">
+              <span>Seguinos en redes</span>
+              <p>Conoce novedades, trabajos realizados y lanzamientos de temporada.</p>
+              <div className="social-links">
+                <a href="https://www.instagram.com/coyote.florida/" target="_blank" rel="noreferrer">
+                  <strong>Instagram</strong>
+                  <small>@coyote.florida</small>
+                </a>
+                <a href="https://wa.me/541155551200" target="_blank" rel="noreferrer">
+                  <strong>WhatsApp</strong>
+                  <small>Consultas y presupuestos</small>
+                </a>
+              </div>
             </div>
           </aside>
         </div>

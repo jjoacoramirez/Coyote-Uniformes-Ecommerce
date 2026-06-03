@@ -38,12 +38,12 @@ function Home() {
             <article>
               <span>02</span>
               <h3>Ajuste Profesional</h3>
-              <p>Prendas disenadas para moverse bien sin perder presencia.</p>
+              <p>Prendas diseñadas para moverse bien sin perder presencia.</p>
             </article>
             <article>
               <span>03</span>
               <h3>Identidad de Equipo</h3>
-              <p>Terminaciones y bordados que acompanan la imagen institucional.</p>
+              <p>Terminaciones y bordados que acompañan la imagen institucional.</p>
             </article>
           </div>
         </div>
