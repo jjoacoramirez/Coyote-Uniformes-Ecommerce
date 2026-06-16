@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
+import ConfirmDialog from '../../components/ConfirmDialog'
 
 const IconoEditar = () => (
   <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
@@ -27,6 +28,10 @@ export default function AdminCategorias() {
 
   const [busqueda, setBusqueda] = useState('')
   const [ordenFiltro, setOrdenFiltro] = useState('nuevo')
+
+  const [confirm, setConfirm] = useState(null)
+  const [eliminando, setEliminando] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
 
   useEffect(() => {
     cargarCategorias()
@@ -77,18 +82,22 @@ export default function AdminCategorias() {
     return lista
   }, [categorias, busqueda, ordenFiltro])
 
-  async function handleEliminar(id, nombre) {
-    if (
-      !window.confirm(
-        `¿Eliminar la categoría "${nombre}"? Los productos asociados quedarán sin categoría.`
-      )
-    )
-      return
+  function handleEliminar(id, nombre) {
+    setDeleteError(null)
+    setConfirm({ id, nombre })
+  }
+
+  async function confirmarEliminar() {
+    setEliminando(true)
     try {
-      await api.delete(`/categorias/${id}`)
-      setCategorias((prev) => prev.filter((c) => c.idCategoria !== id))
+      await api.delete(`/categorias/${confirm.id}`)
+      setCategorias((prev) => prev.filter((c) => c.idCategoria !== confirm.id))
+      setConfirm(null)
     } catch (e) {
-      alert(`Error al eliminar: ${e.message}`)
+      setDeleteError(e.message)
+      setConfirm(null)
+    } finally {
+      setEliminando(false)
     }
   }
 
@@ -103,6 +112,22 @@ export default function AdminCategorias() {
 
   return (
     <>
+      <ConfirmDialog
+        isOpen={confirm !== null}
+        title="Eliminar categoría"
+        message={`¿Estás seguro de que querés eliminar "${confirm?.nombre}"? Los productos asociados quedarán sin categoría.`}
+        onConfirm={confirmarEliminar}
+        onCancel={() => setConfirm(null)}
+        loading={eliminando}
+      />
+
+      {deleteError && (
+        <div className="inv-delete-error">
+          <span>Error al eliminar: {deleteError}</span>
+          <button onClick={() => setDeleteError(null)}>×</button>
+        </div>
+      )}
+
       <div className="inv-header">
         <div>
           <h1 className="inv-title">Categorías</h1>

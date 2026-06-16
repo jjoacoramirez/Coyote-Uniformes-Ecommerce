@@ -42,12 +42,10 @@ public class CategoriaService implements ICategoriaService {
 
     }
 
-    public String deleteCategoria(Long id) {
-        try {
-            categoriaRepository.deleteById(id);
-            return "Categoria eliminada correctamente";
-        } catch (Exception ex) {
-            return "No se pudo eliminar la categoria: " + ex.getMessage();
+    public void deleteCategoria(Long id) {
+        if (!categoriaRepository.existsById(id)) {
+            throw new RuntimeException("Categoria no encontrada: " + id);
         }
+        categoriaRepository.deleteById(id);
     }
 }

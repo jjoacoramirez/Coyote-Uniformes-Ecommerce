@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
+import ConfirmDialog from '../../components/ConfirmDialog'
 
 const PAGE_SIZE = 12
 
@@ -64,6 +65,10 @@ export default function AdminProductos() {
   const [estadoFiltro, setEstadoFiltro] = useState('')
   const [pagina, setPagina] = useState(1)
 
+  const [confirm, setConfirm] = useState(null)
+  const [eliminando, setEliminando] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
+
   useEffect(() => {
     async function cargar() {
       try {
@@ -124,13 +129,22 @@ export default function AdminProductos() {
   const inicio = (pagActual - 1) * PAGE_SIZE
   const productosPage = productosFiltrados.slice(inicio, inicio + PAGE_SIZE)
 
-  async function handleEliminar(id, nombre) {
-    if (!window.confirm(`¿Eliminar "${nombre}"? Esta acción no se puede deshacer.`)) return
+  function handleEliminar(id, nombre) {
+    setDeleteError(null)
+    setConfirm({ id, nombre })
+  }
+
+  async function confirmarEliminar() {
+    setEliminando(true)
     try {
-      await api.delete(`/productos/${id}`)
-      setProductos((prev) => prev.filter((p) => p.idProducto !== id))
+      await api.delete(`/productos/${confirm.id}`)
+      setProductos((prev) => prev.filter((p) => p.idProducto !== confirm.id))
+      setConfirm(null)
     } catch (e) {
-      alert(`Error al eliminar: ${e.message}`)
+      setDeleteError(e.message)
+      setConfirm(null)
+    } finally {
+      setEliminando(false)
     }
   }
 
@@ -158,6 +172,22 @@ export default function AdminProductos() {
 
   return (
     <>
+      <ConfirmDialog
+        isOpen={confirm !== null}
+        title="Eliminar producto"
+        message={`¿Estás seguro de que querés eliminar "${confirm?.nombre}"? Esta acción no se puede deshacer.`}
+        onConfirm={confirmarEliminar}
+        onCancel={() => setConfirm(null)}
+        loading={eliminando}
+      />
+
+      {deleteError && (
+        <div className="inv-delete-error">
+          <span>Error al eliminar: {deleteError}</span>
+          <button onClick={() => setDeleteError(null)}>×</button>
+        </div>
+      )}
+
       {/* Encabezado */}
       <div className="inv-header">
         <div>

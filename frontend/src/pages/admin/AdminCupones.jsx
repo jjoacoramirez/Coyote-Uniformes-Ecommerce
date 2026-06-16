@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
+import ConfirmDialog from '../../components/ConfirmDialog'
 
 function parseLocalDate(val) {
   if (!val) return null
@@ -75,6 +76,10 @@ export default function AdminCupones() {
   const [estadoFiltro, setEstadoFiltro] = useState('')
   const [ordenFiltro, setOrdenFiltro] = useState('nuevo')
 
+  const [confirm, setConfirm] = useState(null)
+  const [eliminando, setEliminando] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
+
   useEffect(() => {
     cargarCupones()
   }, [])
@@ -138,22 +143,26 @@ export default function AdminCupones() {
         prev.map((x) => (x.idDescuento === c.idDescuento ? actualizado : x))
       )
     } catch (e) {
-      alert(`Error: ${e.message}`)
+      setDeleteError(e.message)
     }
   }
 
-  async function handleEliminar(id, codigo) {
-    if (
-      !window.confirm(
-        `¿Eliminar el cupón "${codigo}"? Esta acción no se puede deshacer.`
-      )
-    )
-      return
+  function handleEliminar(id, codigo) {
+    setDeleteError(null)
+    setConfirm({ id, codigo })
+  }
+
+  async function confirmarEliminar() {
+    setEliminando(true)
     try {
-      await api.delete(`/descuentos/${id}`)
-      setCupones((prev) => prev.filter((c) => c.idDescuento !== id))
+      await api.delete(`/descuentos/${confirm.id}`)
+      setCupones((prev) => prev.filter((c) => c.idDescuento !== confirm.id))
+      setConfirm(null)
     } catch (e) {
-      alert(`Error al eliminar: ${e.message}`)
+      setDeleteError(e.message)
+      setConfirm(null)
+    } finally {
+      setEliminando(false)
     }
   }
 
@@ -167,6 +176,22 @@ export default function AdminCupones() {
 
   return (
     <>
+      <ConfirmDialog
+        isOpen={confirm !== null}
+        title="Eliminar cupón"
+        message={`¿Estás seguro de que querés eliminar el cupón "${confirm?.codigo}"? Esta acción no se puede deshacer.`}
+        onConfirm={confirmarEliminar}
+        onCancel={() => setConfirm(null)}
+        loading={eliminando}
+      />
+
+      {deleteError && (
+        <div className="inv-delete-error">
+          <span>Error: {deleteError}</span>
+          <button onClick={() => setDeleteError(null)}>×</button>
+        </div>
+      )}
+
       <div className="inv-header">
         <div>
           <h1 className="inv-title">Cupones de Descuento</h1>

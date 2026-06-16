@@ -11,5 +11,5 @@ public interface ICategoriaService {
     Categoria getCategoriaById(Long id);
     Categoria createCategoria(Categoria categoria);
     Categoria updateCategoria(Long id, Categoria categoria);
-    String deleteCategoria(Long id);
+    void deleteCategoria(Long id);
 }
