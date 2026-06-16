@@ -21,6 +21,10 @@ public class VarianteProductoService implements IVarianteProductoService {
         return varianteProductoRepository.findAll();
     }
 
+    public List<VarianteProducto> getVariantesByProductoId(Long idProducto) {
+        return varianteProductoRepository.findByProducto_IdProducto(idProducto);
+    }
+
     public Optional<VarianteProducto> getVarianteById(Long id) {
         return varianteProductoRepository.findById(id);
     }

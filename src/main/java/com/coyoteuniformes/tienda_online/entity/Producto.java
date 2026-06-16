@@ -1,5 +1,6 @@
 package com.coyoteuniformes.tienda_online.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -32,6 +33,7 @@ public class Producto {
     private String nombre;
     private String descripcion;
     private BigDecimal precioBase;
+    @Column(name = "imagen_url", length = 500)
     private String imagenUrl;
     private Boolean activo;
 }

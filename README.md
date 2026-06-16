@@ -1,32 +1,92 @@
-# Coyote Uniformes — Backend API
+# Coyote Uniformes Ecommerce
 
-API REST para la tienda online de Coyote Uniformes. Desarrollada con Spring Boot 4, Spring Security y JWT.
+Proyecto web para la gestion y venta online de uniformes de Coyote Uniformes. Incluye un backend con API REST desarrollada en Spring Boot y un frontend desarrollado con React + Vite.
 
-## Requisitos
+La aplicacion permite consultar catalogo de productos, categorias y variantes, gestionar usuarios, clientes, administradores, pedidos y carritos, y acceder a funciones protegidas mediante autenticacion JWT.
 
-- Java 17+
-- Maven 3.8+
-- MySQL 8+
+## Tecnologias utilizadas
 
-## Configuración
+- Java 17
+- Spring Boot 4
+- Spring Security + JWT
+- Spring Data JPA / Hibernate
+- MySQL 8
+- Maven
+- React
+- Vite
+- React Router
 
-### 1. Base de datos
+## Requisitos previos
 
-Crear un usuario MySQL o usar `root`. La base de datos se crea automáticamente al levantar la app si no existe.
+Antes de ejecutar el proyecto, instalar:
 
-### 2. application.properties
+- Java 17 o superior
+- Maven 3.8 o superior, o usar el wrapper incluido (`mvnw` / `mvnw.cmd`)
+- MySQL 8 o superior
+- Node.js y npm
 
-El archivo se encuentra en `src/main/resources/application.properties`. Ajustar las credenciales de MySQL:
+## Configuracion de la base de datos
+
+El backend utiliza MySQL. La configuracion principal esta en:
+
+```text
+src/main/resources/application.properties
+```
+
+Por defecto se conecta a:
 
 ```properties
 spring.datasource.url=jdbc:mysql://localhost:3306/tienda_online?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
 spring.datasource.username=root
+```
+
+Si tu usuario de MySQL tiene contrasena, agregar o modificar:
+
+```properties
 spring.datasource.password=TU_PASSWORD
 ```
 
-### 3. Usuario inicial
+La base de datos `tienda_online` se crea automaticamente al iniciar la aplicacion si no existe.
 
-Insertar un usuario administrador manualmente en la base de datos (la app no tiene endpoint de registro de admins):
+## Ejecutar el backend
+
+Desde la raiz del proyecto:
+
+```bash
+mvnw.cmd spring-boot:run
+```
+
+En Linux o macOS:
+
+```bash
+./mvnw spring-boot:run
+```
+
+El backend queda disponible en:
+
+```text
+http://localhost:8080/api
+```
+
+## Ejecutar el frontend
+
+En otra terminal, entrar a la carpeta del frontend:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+El frontend queda disponible normalmente en:
+
+```text
+http://localhost:5173
+```
+
+## Usuario administrador inicial
+
+Si se necesita acceder como administrador, se puede insertar un usuario manualmente en MySQL:
 
 ```sql
 INSERT INTO usuarios (nombre, apellido, email, contrasena, rol, fecha_registro, estado)
@@ -34,38 +94,39 @@ VALUES (
   'Admin',
   'Coyote',
   'admin@coyoteuniformes.com',
-  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- password: password
+  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
   'ROLE_ADMIN',
   CURDATE(),
   'ACTIVO'
 );
 ```
 
-> Para usar otra contraseña, generá el hash BCrypt con cualquier herramienta online o desde la app.
+La contrasena de este usuario es:
 
-## Levantar el proyecto
-
-```bash
-# Clonar el repo
-git clone <url-del-repo>
-cd Coyote-Uniformes-Ecommerce
-
-# Compilar y correr
-./mvnw spring-boot:run
+```text
+password
 ```
 
-En Windows:
+## Scripts utiles
+
+Backend:
+
 ```bash
 mvnw.cmd spring-boot:run
 ```
 
-La API queda disponible en `http://localhost:8080/api`.
+Frontend:
 
-## Autenticación
+```bash
+npm run dev
+npm run build
+npm run lint
+```
 
-La API usa JWT. Para acceder a endpoints protegidos:
+## Autenticacion
 
-**1. Login:**
+La API usa JWT. Para iniciar sesion:
+
 ```http
 POST /api/auth/login
 Content-Type: application/json
@@ -76,36 +137,19 @@ Content-Type: application/json
 }
 ```
 
-**2. Usar el token devuelto en cada request:**
-```
+Luego se debe enviar el token en las peticiones protegidas:
+
+```text
 Authorization: Bearer <token>
 ```
 
-## Roles
+## Estructura general
 
-| Rol | Descripción |
-|---|---|
-| `ROLE_ADMIN` | Acceso completo |
-| `ROLE_USER` | Acceso a carrito, pedidos propios y catálogo |
-
-## Endpoints principales
-
-Todos los endpoints tienen el prefijo `/api`.
-
-| Método | Endpoint | Acceso |
-|---|---|---|
-| POST | `/auth/login` | Público |
-| GET | `/categorias`, `/productos`, `/variantes` | Público |
-| POST/PUT/DELETE | `/categorias/**`, `/productos/**`, `/variantes/**` | ADMIN |
-| GET/POST/PUT/DELETE | `/usuarios/**`, `/clientes/**`, `/administradores/**` | ADMIN |
-| GET/POST | `/pedidos/**` | USER + ADMIN |
-| PUT/DELETE | `/pedidos/**` | ADMIN |
-| GET/POST | `/carritos/**`, `/items-carrito/**` | USER + ADMIN |
-
-## Stack
-
-- Spring Boot 4.0.4
-- Spring Security 6 + JWT (jjwt 0.12.6)
-- Spring Data JPA + Hibernate
-- MySQL 8
-- Lombok
+```text
+Coyote-Uniformes-Ecommerce/
++-- src/                 # Backend Spring Boot
++-- frontend/            # Frontend React + Vite
++-- pom.xml              # Dependencias y configuracion Maven
++-- mvnw / mvnw.cmd      # Maven Wrapper
++-- README.md
+```

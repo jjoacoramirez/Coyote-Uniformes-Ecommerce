@@ -7,6 +7,7 @@ import com.coyoteuniformes.tienda_online.entity.VarianteProducto;
 
 public interface IVarianteProductoService {
     List<VarianteProducto> getAllVariantes();
+    List<VarianteProducto> getVariantesByProductoId(Long idProducto);
     Optional<VarianteProducto> getVarianteById(Long id);
     VarianteProducto createVariante(VarianteProducto variante);
     VarianteProducto updateVariante(Long id, VarianteProducto variante);

@@ -1,18 +1,24 @@
 package com.coyoteuniformes.tienda_online.service;
 
+import com.coyoteuniformes.tienda_online.entity.Producto;
+import com.coyoteuniformes.tienda_online.entity.dto.ProductoAdminDto;
+import com.coyoteuniformes.tienda_online.entity.dto.ProductoDto;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-
-import com.coyoteuniformes.tienda_online.entity.Producto;
 
 public interface IProductoService {
     List<Producto> getAllProductos();
 
+    List<ProductoAdminDto> getProductosAdmin();
+
     Optional<Producto> getProductoById(Long id);
 
-    Producto updateProducto(Long id, Producto producto);
+    Producto createProducto(ProductoDto dto, MultipartFile imagen) throws IOException;
 
-    Producto createProducto(Producto producto);
+    Producto updateProducto(Long id, ProductoDto dto, MultipartFile imagen) throws IOException;
 
-    void deleteProducto(Long id);
+    void deleteProducto(Long id) throws IOException;
 }

@@ -1,5 +1,7 @@
 package com.coyoteuniformes.tienda_online.controllers;
 
+import com.coyoteuniformes.tienda_online.entity.dto.CambiarPasswordDto;
+import com.coyoteuniformes.tienda_online.entity.dto.PerfilUpdateDto;
 import com.coyoteuniformes.tienda_online.entity.dto.UsuarioDto;
 import com.coyoteuniformes.tienda_online.service.UsuarioService;
 import jakarta.validation.Valid;
@@ -7,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -42,6 +45,22 @@ public class UsuarioController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUsuario(@PathVariable Long id) {
         usuarioService.deleteUsuario(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UsuarioDto> getMe(Principal principal) {
+        return ResponseEntity.ok(usuarioService.getPerfilByEmail(principal.getName()));
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<UsuarioDto> updateMe(Principal principal, @RequestBody PerfilUpdateDto dto) {
+        return ResponseEntity.ok(usuarioService.updatePerfilByEmail(principal.getName(), dto));
+    }
+
+    @PutMapping("/me/password")
+    public ResponseEntity<Void> cambiarPassword(Principal principal, @RequestBody CambiarPasswordDto dto) {
+        usuarioService.cambiarPassword(principal.getName(), dto);
         return ResponseEntity.noContent().build();
     }
 }
