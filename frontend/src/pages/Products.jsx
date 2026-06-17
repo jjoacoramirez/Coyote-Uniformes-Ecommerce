@@ -33,6 +33,10 @@ function Products() {
   const { user } = useAuth()
 
   useEffect(() => {
+    setCategory(searchParams.get('categoria') ?? 'all')
+  }, [searchParams])
+
+  useEffect(() => {
     Promise.all([api.get('/productos'), api.get('/categorias')])
       .then(([productosData, categoriasData]) => {
         const mapped = productosData.map((p) => toProductShape(p))

@@ -38,6 +38,8 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
 
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                 //auth publica
                 .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/error").permitAll()

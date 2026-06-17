@@ -4,15 +4,36 @@ import { api } from '../services/api.js'
 const CartContext = createContext(null)
 
 export function CartProvider({ children }) {
-  const [cartItem, setCartItem] = useState(null)
+  const [cartItems, setCartItems] = useState([])
   const [appliedCoupon, setAppliedCoupon] = useState(null)
 
-  function addToCart(product, variante) {
-    setCartItem({ product, variante, quantity: 1 })
+  function getItemKey(product, variante) {
+    return `${product.id}-${variante?.idVariante ?? 'sin-variante'}`
   }
 
-  function updateQuantity(quantity) {
-    setCartItem(prev => prev ? { ...prev, quantity: Math.max(1, quantity) } : null)
+  function addToCart(product, variante) {
+    const key = getItemKey(product, variante)
+    setCartItems(prev => {
+      const existingItem = prev.find(item => item.key === key)
+      if (existingItem) {
+        return prev.map(item =>
+          item.key === key ? { ...item, quantity: item.quantity + 1 } : item
+        )
+      }
+      return [...prev, { key, product, variante, quantity: 1 }]
+    })
+  }
+
+  function updateQuantity(key, quantity) {
+    setCartItems(prev =>
+      prev.map(item =>
+        item.key === key ? { ...item, quantity: Math.max(1, quantity) } : item
+      )
+    )
+  }
+
+  function removeFromCart(key) {
+    setCartItems(prev => prev.filter(item => item.key !== key))
   }
 
   async function applyCoupon(code) {
@@ -24,8 +45,10 @@ export function CartProvider({ children }) {
     setAppliedCoupon(null)
   }
 
+  const cartItem = cartItems[0] ?? null
+
   return (
-    <CartContext.Provider value={{ cartItem, addToCart, updateQuantity, appliedCoupon, applyCoupon, removeCoupon }}>
+    <CartContext.Provider value={{ cartItem, cartItems, addToCart, updateQuantity, removeFromCart, appliedCoupon, applyCoupon, removeCoupon }}>
       {children}
     </CartContext.Provider>
   )

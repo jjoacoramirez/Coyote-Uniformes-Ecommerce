@@ -39,4 +39,12 @@ public class UsuarioDto {
     private LocalDate fechaRegistro;
 
     private String estado;
+
+    private Long idCliente;
+    private String calle;
+    private String numero;
+    private String ciudad;
+    private String provincia;
+    private String codigoPostal;
+    private String pais;
 }

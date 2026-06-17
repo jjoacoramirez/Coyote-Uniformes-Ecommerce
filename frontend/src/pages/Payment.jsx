@@ -15,6 +15,9 @@ function Payment() {
         <Stepper activeStep={2} />
         <div className="checkout-grid">
           <div className="checkout-main form-panel">
+            <Link className="checkout-back-link" to="/checkout/envio">
+              Volver al envio
+            </Link>
             <h1>Pago</h1>
             <p>Elegi el medio de pago para finalizar la compra de forma segura.</p>
 

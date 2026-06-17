@@ -7,6 +7,7 @@ import com.coyoteuniformes.tienda_online.entity.dto.ProductoDto;
 import com.coyoteuniformes.tienda_online.exceptions.ProductoException;
 import com.coyoteuniformes.tienda_online.repository.CategoriaRepository;
 import com.coyoteuniformes.tienda_online.repository.ProductoRepository;
+import com.coyoteuniformes.tienda_online.repository.VarianteProductoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,6 +22,7 @@ public class ProductoService implements IProductoService {
 
     private final ProductoRepository productoRepository;
     private final CategoriaRepository categoriaRepository;
+    private final VarianteProductoRepository varianteProductoRepository;
     private final CloudinaryService cloudinaryService;
 
     @Override
@@ -90,10 +92,15 @@ public class ProductoService implements IProductoService {
         Producto producto = productoRepository.findById(id)
             .orElseThrow(() -> new ProductoException("Producto no encontrado: " + id));
 
-        if (producto.getImagenUrl() != null) {
-            cloudinaryService.eliminarImagen(producto.getImagenUrl());
+        long cantidadVariantes = varianteProductoRepository.countByProductoId(id);
+        if (cantidadVariantes > 0) {
+            throw new ProductoException("No se puede eliminar el producto porque tiene variantes asociadas. Elimina primero sus variantes o desactiva el producto.");
         }
 
         productoRepository.delete(producto);
+
+        if (producto.getImagenUrl() != null) {
+            cloudinaryService.eliminarImagen(producto.getImagenUrl());
+        }
     }
 }

@@ -1,10 +1,12 @@
 package com.coyoteuniformes.tienda_online.service;
 
+import com.coyoteuniformes.tienda_online.entity.Cliente;
 import com.coyoteuniformes.tienda_online.entity.Usuario;
 import com.coyoteuniformes.tienda_online.entity.dto.CambiarPasswordDto;
 import com.coyoteuniformes.tienda_online.entity.dto.PerfilUpdateDto;
 import com.coyoteuniformes.tienda_online.entity.dto.UsuarioDto;
 import com.coyoteuniformes.tienda_online.exceptions.UsuarioException;
+import com.coyoteuniformes.tienda_online.repository.ClienteRepository;
 import com.coyoteuniformes.tienda_online.repository.UsuarioRepository;
 import com.coyoteuniformes.tienda_online.service.support.UsuarioRoles;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,10 +22,12 @@ import java.util.List;
 public class UsuarioService implements IUsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final ClienteRepository clienteRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
+    public UsuarioService(UsuarioRepository usuarioRepository, ClienteRepository clienteRepository, PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
+        this.clienteRepository = clienteRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -119,6 +123,21 @@ public class UsuarioService implements IUsuarioService {
         if (StringUtils.hasText(dto.getNombre())) usuario.setNombre(dto.getNombre().trim());
         if (StringUtils.hasText(dto.getApellido())) usuario.setApellido(dto.getApellido().trim());
         usuario.setTelefono(normalizeOptional(dto.getTelefono()));
+
+        if (Boolean.TRUE.equals(dto.getActualizarDireccion())) {
+            Cliente cliente = resolveClienteParaDireccion(usuario, dto);
+            if (cliente != null) {
+                cliente.setCalle(normalizeOptional(dto.getCalle()));
+                cliente.setNumero(normalizeOptional(dto.getNumero()));
+                cliente.setCiudad(normalizeOptional(dto.getCiudad()));
+                cliente.setProvincia(normalizeOptional(dto.getProvincia()));
+                cliente.setCodigoPostal(normalizeOptional(dto.getCodigoPostal()));
+                cliente.setPais(normalizeOptional(dto.getPais()));
+                clienteRepository.save(cliente);
+                usuario.setCliente(cliente);
+            }
+        }
+
         return toDto(usuarioRepository.save(usuario));
     }
 
@@ -156,7 +175,37 @@ public class UsuarioService implements IUsuarioService {
                 .rol(usuario.getRol())
                 .fechaRegistro(usuario.getFechaRegistro())
                 .estado(usuario.getEstado())
+                .idCliente(usuario.getCliente() != null ? usuario.getCliente().getIdCliente() : null)
+                .calle(usuario.getCliente() != null ? usuario.getCliente().getCalle() : null)
+                .numero(usuario.getCliente() != null ? usuario.getCliente().getNumero() : null)
+                .ciudad(usuario.getCliente() != null ? usuario.getCliente().getCiudad() : null)
+                .provincia(usuario.getCliente() != null ? usuario.getCliente().getProvincia() : null)
+                .codigoPostal(usuario.getCliente() != null ? usuario.getCliente().getCodigoPostal() : null)
+                .pais(usuario.getCliente() != null ? usuario.getCliente().getPais() : null)
                 .build();
+    }
+
+    private Cliente resolveClienteParaDireccion(Usuario usuario, PerfilUpdateDto dto) {
+        if (!tieneDatosDireccion(dto)) {
+            return usuario.getCliente();
+        }
+
+        if (usuario.getCliente() != null) {
+            return usuario.getCliente();
+        }
+
+        return Cliente.builder()
+                .usuario(usuario)
+                .build();
+    }
+
+    private boolean tieneDatosDireccion(PerfilUpdateDto dto) {
+        return StringUtils.hasText(dto.getCalle())
+                || StringUtils.hasText(dto.getNumero())
+                || StringUtils.hasText(dto.getCiudad())
+                || StringUtils.hasText(dto.getProvincia())
+                || StringUtils.hasText(dto.getCodigoPostal())
+                || StringUtils.hasText(dto.getPais());
     }
 
     private String normalizeEmail(String email) {

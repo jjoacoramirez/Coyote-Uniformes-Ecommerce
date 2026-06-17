@@ -7,20 +7,22 @@ function calcularDescuento(subtotal, coupon) {
   if (!coupon) return 0
   const valor = Number(coupon.valor)
   if (coupon.tipo === 'PORCENTAJE') return Math.round(subtotal * (valor / 100))
-  return Math.min(valor, subtotal) // MONTO_FIJO, cap al subtotal
+  return Math.min(valor, subtotal)
 }
 
-function OrderSummary({ ctaLabel, ctaTo, paymentMethod, showCoupon = false }) {
-  const { cartItem, appliedCoupon, applyCoupon, removeCoupon } = useCart()
+function OrderSummary({ ctaLabel, ctaTo, onCtaClick, paymentMethod, showCoupon = false }) {
+  const { cartItems, appliedCoupon, applyCoupon, removeCoupon } = useCart()
   const [inputCoupon, setInputCoupon] = useState('')
   const [error, setError] = useState('')
   const [applying, setApplying] = useState(false)
 
-  if (!cartItem) return null
+  if (cartItems.length === 0) return null
 
-  const { product, variante, quantity } = cartItem
-  const precio = variante?.precio ?? product.price
-  const subtotal = precio * quantity
+  const subtotal = cartItems.reduce((acc, { product, variante, quantity }) => {
+    const precio = variante?.precio ?? product.price
+    return acc + precio * quantity
+  }, 0)
+  const totalQuantity = cartItems.reduce((acc, item) => acc + item.quantity, 0)
   const discount = calcularDescuento(subtotal, appliedCoupon)
   const total = subtotal - discount + cartSummary.shipping + cartSummary.tax
 
@@ -33,7 +35,7 @@ function OrderSummary({ ctaLabel, ctaTo, paymentMethod, showCoupon = false }) {
       setError('')
       setInputCoupon('')
     } catch (err) {
-      setError(err.message || 'Cupón inválido')
+      setError(err.message || 'Cupon invalido')
     } finally {
       setApplying(false)
     }
@@ -42,27 +44,31 @@ function OrderSummary({ ctaLabel, ctaTo, paymentMethod, showCoupon = false }) {
   return (
     <aside className="order-summary">
       <h2>Resumen de compra</h2>
-      <div className="summary-product">
-        <img src={product.image} alt="" />
-        <div>
-          <strong>{product.name}</strong>
-          <span>Talle {variante?.talle ?? '—'} / Cantidad {quantity}</span>
-        </div>
+      <div className="summary-products-list">
+        {cartItems.map(({ key, product, variante, quantity }) => (
+          <div className="summary-product" key={key}>
+            <img src={product.image} alt="" />
+            <div>
+              <strong>{product.name}</strong>
+              <span>Talle {variante?.talle ?? '-'} / Cantidad {quantity}</span>
+            </div>
+          </div>
+        ))}
       </div>
 
       {showCoupon && (
         <div className="coupon-field">
           {appliedCoupon ? (
             <div className="coupon-applied">
-              <span>Cupón <strong>{appliedCoupon.codigo}</strong> aplicado</span>
-              <button type="button" className="coupon-remove" onClick={removeCoupon}>✕</button>
+              <span>Cupon <strong>{appliedCoupon.codigo}</strong> aplicado</span>
+              <button type="button" className="coupon-remove" onClick={removeCoupon}>x</button>
             </div>
           ) : (
             <form className="coupon-form" onSubmit={handleApply}>
               <input
                 value={inputCoupon}
                 onChange={e => { setInputCoupon(e.target.value); setError('') }}
-                placeholder="Código de cupón"
+                placeholder="Codigo de cupon"
                 disabled={applying}
               />
               <button type="submit" className="button secondary compact" disabled={applying}>
@@ -75,6 +81,10 @@ function OrderSummary({ ctaLabel, ctaTo, paymentMethod, showCoupon = false }) {
       )}
 
       <dl>
+        <div>
+          <dt>Items</dt>
+          <dd>{totalQuantity}</dd>
+        </div>
         <div>
           <dt>Subtotal</dt>
           <dd>{formatPrice(subtotal)}</dd>
@@ -105,7 +115,11 @@ function OrderSummary({ ctaLabel, ctaTo, paymentMethod, showCoupon = false }) {
         </div>
       </dl>
 
-      {ctaTo && (
+      {onCtaClick ? (
+        <button className="button primary full" type="button" onClick={onCtaClick}>
+          {ctaLabel}
+        </button>
+      ) : ctaTo && (
         <Link className="button primary full" to={ctaTo}>
           {ctaLabel}
         </Link>

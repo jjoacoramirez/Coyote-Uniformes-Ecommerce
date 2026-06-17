@@ -16,6 +16,18 @@ export default function UserAccount() {
   const navigate = useNavigate()
 
   const [perfil, setPerfil] = useState({ nombre: '', apellido: '', email: '', telefono: '' })
+  const [direccion, setDireccion] = useState({
+    calle: '',
+    numero: '',
+    ciudad: '',
+    provincia: '',
+    codigoPostal: '',
+    pais: 'Argentina',
+  })
+  const [editandoDireccion, setEditandoDireccion] = useState(false)
+  const [guardandoDireccion, setGuardandoDireccion] = useState(false)
+  const [errorDireccion, setErrorDireccion] = useState('')
+  const [exitoDireccion, setExitoDireccion] = useState('')
   const [cargando, setCargando] = useState(true)
   const [guardandoPerfil, setGuardandoPerfil] = useState(false)
   const [errorPerfil, setErrorPerfil] = useState('')
@@ -56,6 +68,14 @@ export default function UserAccount() {
           apellido: d.apellido ?? '',
           email: d.email ?? '',
           telefono: d.telefono ?? '',
+        })
+        setDireccion({
+          calle: d.calle ?? '',
+          numero: d.numero ?? '',
+          ciudad: d.ciudad ?? '',
+          provincia: d.provincia ?? '',
+          codigoPostal: d.codigoPostal ?? '',
+          pais: d.pais ?? 'Argentina',
         })
       }
       if (pedidosRes.status === 'fulfilled') {
@@ -129,6 +149,89 @@ export default function UserAccount() {
     localStorage.setItem('up_idioma', idioma)
     setPrefsSaved(true)
     setTimeout(() => setPrefsSaved(false), 2000)
+  }
+
+  const direccionCompleta = Boolean(
+    direccion.calle.trim() &&
+    direccion.numero.trim() &&
+    direccion.ciudad.trim() &&
+    direccion.provincia.trim() &&
+    direccion.codigoPostal.trim()
+  )
+
+  const handleGuardarDireccion = async () => {
+    setErrorDireccion('')
+    setExitoDireccion('')
+    if (!direccionCompleta) {
+      setErrorDireccion('Completa calle, numero, ciudad, provincia y codigo postal.')
+      return
+    }
+
+    setGuardandoDireccion(true)
+    try {
+      const data = await api.put('/usuarios/me', {
+        nombre: perfil.nombre.trim(),
+        apellido: perfil.apellido.trim(),
+        telefono: perfil.telefono.trim() || null,
+        actualizarDireccion: true,
+        calle: direccion.calle.trim(),
+        numero: direccion.numero.trim(),
+        ciudad: direccion.ciudad.trim(),
+        provincia: direccion.provincia.trim(),
+        codigoPostal: direccion.codigoPostal.trim(),
+        pais: direccion.pais.trim() || 'Argentina',
+      })
+      setDireccion({
+        calle: data.calle ?? '',
+        numero: data.numero ?? '',
+        ciudad: data.ciudad ?? '',
+        provincia: data.provincia ?? '',
+        codigoPostal: data.codigoPostal ?? '',
+        pais: data.pais ?? 'Argentina',
+      })
+      setEditandoDireccion(false)
+      setExitoDireccion('Direccion guardada correctamente.')
+      setTimeout(() => setExitoDireccion(''), 3000)
+    } catch (e) {
+      setErrorDireccion(e.message || 'Error al guardar la direccion.')
+    } finally {
+      setGuardandoDireccion(false)
+    }
+  }
+
+  const handleQuitarDireccion = async () => {
+    setErrorDireccion('')
+    setExitoDireccion('')
+    setGuardandoDireccion(true)
+    try {
+      await api.put('/usuarios/me', {
+        nombre: perfil.nombre.trim(),
+        apellido: perfil.apellido.trim(),
+        telefono: perfil.telefono.trim() || null,
+        actualizarDireccion: true,
+        calle: null,
+        numero: null,
+        ciudad: null,
+        provincia: null,
+        codigoPostal: null,
+        pais: null,
+      })
+      setDireccion({
+        calle: '',
+        numero: '',
+        ciudad: '',
+        provincia: '',
+        codigoPostal: '',
+        pais: 'Argentina',
+      })
+      setEditandoDireccion(false)
+      setExitoDireccion('Direccion eliminada.')
+      setTimeout(() => setExitoDireccion(''), 3000)
+    } catch (e) {
+      setErrorDireccion(e.message || 'Error al eliminar la direccion.')
+    } finally {
+      setGuardandoDireccion(false)
+    }
   }
 
   const initials = [perfil.nombre?.[0], perfil.apellido?.[0]]
@@ -456,12 +559,134 @@ export default function UserAccount() {
                   <path fillRule="evenodd" d="M5.05 4.05a7 7 0 1 1 9.9 9.9L10 18.9l-4.95-4.95a7 7 0 0 1 0-9.9zM10 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" clipRule="evenodd" />
                 </svg>
                 <h2 className="up-card-title">Direcciones Guardadas</h2>
-                <button className="up-add-link" type="button">+ Añadir Nueva</button>
+                <button
+                  className="up-add-link"
+                  type="button"
+                  onClick={() => setEditandoDireccion((value) => !value)}
+                >
+                  {direccionCompleta ? 'Editar' : '+ Anadir Nueva'}
+                </button>
               </div>
               <div className="up-card-body">
-                <p style={{ fontSize: '0.82rem', color: 'var(--color-muted)', lineHeight: 1.5 }}>
-                  Tus direcciones de envío aparecerán aquí cuando completes tu primera compra.
-                </p>
+                {direccionCompleta && !editandoDireccion && (
+                  <div className="up-address-card">
+                    <p className="up-address-title">Direccion principal</p>
+                    <p className="up-address-line">{direccion.calle} {direccion.numero}</p>
+                    <p className="up-address-line">
+                      {direccion.ciudad}, {direccion.provincia} ({direccion.codigoPostal})
+                    </p>
+                    <p className="up-address-line">{direccion.pais || 'Argentina'}</p>
+                    <div className="up-address-actions">
+                      <button type="button" className="up-text-btn" onClick={() => setEditandoDireccion(true)}>
+                        Editar
+                      </button>
+                      <button type="button" className="up-text-btn danger" onClick={handleQuitarDireccion}>
+                        Quitar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {!direccionCompleta && !editandoDireccion && (
+                  <p style={{ fontSize: '0.82rem', color: 'var(--color-muted)', lineHeight: 1.5 }}>
+                    Todavia no tenes direcciones guardadas. Agrega una para usarla en tus proximos envios.
+                  </p>
+                )}
+
+                {editandoDireccion && (
+                  <div className="up-address-form">
+                    <div className="up-form-grid">
+                      <div className="up-field">
+                        <label className="up-label" htmlFor="up-dir-calle">Calle</label>
+                        <input
+                          id="up-dir-calle"
+                          className="up-input"
+                          type="text"
+                          value={direccion.calle}
+                          onChange={(e) => setDireccion((d) => ({ ...d, calle: e.target.value }))}
+                          placeholder="Av. Siempre Viva"
+                        />
+                      </div>
+                      <div className="up-field">
+                        <label className="up-label" htmlFor="up-dir-numero">Numero</label>
+                        <input
+                          id="up-dir-numero"
+                          className="up-input"
+                          type="text"
+                          value={direccion.numero}
+                          onChange={(e) => setDireccion((d) => ({ ...d, numero: e.target.value }))}
+                          placeholder="742"
+                        />
+                      </div>
+                      <div className="up-field">
+                        <label className="up-label" htmlFor="up-dir-ciudad">Ciudad</label>
+                        <input
+                          id="up-dir-ciudad"
+                          className="up-input"
+                          type="text"
+                          value={direccion.ciudad}
+                          onChange={(e) => setDireccion((d) => ({ ...d, ciudad: e.target.value }))}
+                          placeholder="Ciudad"
+                        />
+                      </div>
+                      <div className="up-field">
+                        <label className="up-label" htmlFor="up-dir-provincia">Provincia</label>
+                        <input
+                          id="up-dir-provincia"
+                          className="up-input"
+                          type="text"
+                          value={direccion.provincia}
+                          onChange={(e) => setDireccion((d) => ({ ...d, provincia: e.target.value }))}
+                          placeholder="Provincia"
+                        />
+                      </div>
+                      <div className="up-field">
+                        <label className="up-label" htmlFor="up-dir-cp">Codigo postal</label>
+                        <input
+                          id="up-dir-cp"
+                          className="up-input"
+                          type="text"
+                          value={direccion.codigoPostal}
+                          onChange={(e) => setDireccion((d) => ({ ...d, codigoPostal: e.target.value }))}
+                          placeholder="1000"
+                        />
+                      </div>
+                      <div className="up-field">
+                        <label className="up-label" htmlFor="up-dir-pais">Pais</label>
+                        <input
+                          id="up-dir-pais"
+                          className="up-input"
+                          type="text"
+                          value={direccion.pais}
+                          onChange={(e) => setDireccion((d) => ({ ...d, pais: e.target.value }))}
+                          placeholder="Argentina"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="up-address-actions form">
+                      <button
+                        className="button primary"
+                        type="button"
+                        onClick={handleGuardarDireccion}
+                        disabled={guardandoDireccion}
+                      >
+                        {guardandoDireccion ? 'Guardando...' : 'Guardar Direccion'}
+                      </button>
+                      <button
+                        className="button secondary"
+                        type="button"
+                        onClick={() => setEditandoDireccion(false)}
+                        disabled={guardandoDireccion}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {errorDireccion && <p className="up-msg error">{errorDireccion}</p>}
+                {exitoDireccion && <p className="up-msg success">{exitoDireccion}</p>}
               </div>
             </div>
           </div>

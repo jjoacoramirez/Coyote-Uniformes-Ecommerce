@@ -6,8 +6,10 @@ import com.coyoteuniformes.tienda_online.exceptions.ClienteException;
 import com.coyoteuniformes.tienda_online.exceptions.DetallePedidoException;
 import com.coyoteuniformes.tienda_online.exceptions.ItemCarritoException;
 import com.coyoteuniformes.tienda_online.exceptions.PedidoException;
+import com.coyoteuniformes.tienda_online.exceptions.ProductoException;
 import com.coyoteuniformes.tienda_online.exceptions.UsuarioException;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -30,7 +32,8 @@ public class GlobalExceptionHandler {
             PedidoException.class,
             DetallePedidoException.class,
             CarritoException.class,
-            ItemCarritoException.class
+            ItemCarritoException.class,
+            ProductoException.class
     })
     public ResponseEntity<Map<String, Object>> handleBusinessException(RuntimeException exception) {
         return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage());
@@ -52,9 +55,14 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
 
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(DataIntegrityViolationException exception) {
+        return buildResponse(HttpStatus.BAD_REQUEST, "No se puede completar la operacion porque el registro esta relacionado con otros datos.");
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleUnexpectedException(Exception exception) {
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrio un error inesperado. Intenta nuevamente mas tarde.");
     }
 
     private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String message) {

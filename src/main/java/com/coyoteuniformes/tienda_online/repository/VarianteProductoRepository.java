@@ -11,4 +11,7 @@ public interface VarianteProductoRepository extends JpaRepository<VarianteProduc
 
     @Query("SELECT v FROM VarianteProducto v WHERE v.Producto.idProducto = :idProducto")
     List<VarianteProducto> findByProducto_IdProducto(@Param("idProducto") Long idProducto);
+
+    @Query("SELECT COUNT(v) FROM VarianteProducto v WHERE v.Producto.idProducto = :idProducto")
+    long countByProductoId(@Param("idProducto") Long idProducto);
 }

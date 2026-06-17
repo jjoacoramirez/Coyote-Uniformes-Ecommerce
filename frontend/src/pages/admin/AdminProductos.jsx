@@ -183,7 +183,7 @@ export default function AdminProductos() {
 
       {deleteError && (
         <div className="inv-delete-error">
-          <span>Error al eliminar: {deleteError}</span>
+          <span>No se pudo eliminar el producto: {deleteError}</span>
           <button onClick={() => setDeleteError(null)}>×</button>
         </div>
       )}

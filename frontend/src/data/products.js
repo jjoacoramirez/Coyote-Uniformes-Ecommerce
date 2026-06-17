@@ -1,19 +1,19 @@
 import assets from '../assets'
 export const categories = [
   {
-    id: 'medico',
+    id: 'profesionales',
     title: 'Medico',
     subtitle: 'Ambo elastizado, batas y prendas pensadas para largas jornadas.',
     image: assets.Medico,
   },
   {
-    id: 'colegial',
+    id: 'uniformes escolares',
     title: 'Colegial',
     subtitle: 'Uniformes institucionales con identidad y resistencia diaria.',
     image: assets.Escolar,
   },
   {
-    id: 'profesional',
+    id: 'profesionales',
     title: 'Profesional',
     subtitle: 'Sastrería y prendas de presencia impecable para equipos.',
     image: assets.sastreria,
@@ -35,7 +35,7 @@ export const products = [
     sizes: ['XS', 'S', 'M', 'L', 'XL'],
   },
   {
-    id: 'buzo-capucha-cst',
+    id: 2,
     name: 'Buzo con Capucha CST',
     category: 'colegial',
     categoryLabel: 'Escolar',
@@ -84,7 +84,7 @@ export const formatPrice = (value) =>
     maximumFractionDigits: 0,
   }).format(value)
 
-export const cartProduct = products.find((product) => product.id === 'buzo-capucha-cst')
+export const cartProduct = products.find((product) => product.id === 2)
 
 export const cartSummary = {
   quantity: 1,
