@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { formatPrice } from '../data/products.js'
+import { formatPrice } from '../utils/format.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useCart } from '../context/CartContext.jsx'
 
@@ -104,13 +104,17 @@ function ProductDetail({ product, onAddToCart }) {
         <button
           className="button primary full"
           type="button"
-          onClick={() => {
+          onClick={async () => {
             if (!user) {
               navigate('/login')
               return
             }
-            addToCart(product, varianteActual)
-            onAddToCart(product, varianteActual)
+            try {
+              await addToCart(product, varianteActual)
+              onAddToCart(product, varianteActual)
+            } catch (err) {
+              onAddToCart(product, varianteActual, err.message || 'No se pudo agregar el producto.')
+            }
           }}
         >
           Agregar al carrito

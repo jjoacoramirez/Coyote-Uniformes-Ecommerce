@@ -1,11 +1,23 @@
+import { useEffect, useState } from 'react'
 import CategoryCard from '../components/CategoryCard.jsx'
 import HeroBanner from '../components/HeroBanner.jsx'
 import Layout from '../components/Layout.jsx'
-import ProductCard from '../components/ProductCard.jsx'
-import { categories, products } from '../data/products.js'
+import { api } from '../services/api.js'
+import { toCategoryShape } from '../utils/catalog.js'
 
 function Home() {
-  const featuredProducts = products.filter((product) => product.featured)
+  const [categories, setCategories] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    api.get('/categorias')
+      .then((categoriasData) => {
+        setCategories(categoriasData.map(toCategoryShape))
+      })
+      .catch(() => setError('No se pudieron cargar las colecciones.'))
+      .finally(() => setLoading(false))
+  }, [])
 
   return (
     <Layout>
@@ -19,7 +31,9 @@ function Home() {
         </div>
 
         <div className="category-grid">
-          {categories.map((category) => (
+          {loading && <p>Cargando colecciones...</p>}
+          {error && <p className="form-error">{error}</p>}
+          {!loading && !error && categories.map((category) => (
             <CategoryCard key={category.id} category={category} />
           ))}
         </div>
@@ -47,10 +61,6 @@ function Home() {
             </article>
           </div>
         </div>
-
-        {featuredProducts.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
       </section>
     </Layout>
   )

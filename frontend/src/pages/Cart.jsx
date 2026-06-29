@@ -3,10 +3,24 @@ import Layout from '../components/Layout.jsx'
 import OrderSummary from '../components/OrderSummary.jsx'
 import Stepper from '../components/Stepper.jsx'
 import { useCart } from '../context/CartContext.jsx'
-import { formatPrice } from '../data/products.js'
+import { formatPrice } from '../utils/format.js'
 
 function Cart() {
-  const { cartItems, updateQuantity, removeFromCart } = useCart()
+  const { cartItems, loadingCart, updateQuantity, removeFromCart } = useCart()
+
+  if (loadingCart) {
+    return (
+      <Layout>
+        <section className="checkout-page">
+          <Stepper activeStep={0} />
+          <div className="checkout-main">
+            <h1>Tu carrito</h1>
+            <p>Cargando carrito...</p>
+          </div>
+        </section>
+      </Layout>
+    )
+  }
 
   if (cartItems.length === 0) {
     return (

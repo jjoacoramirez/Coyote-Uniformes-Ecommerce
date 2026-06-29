@@ -4,24 +4,7 @@ import Layout from '../components/Layout.jsx'
 import ProductDetail from '../components/ProductDetail.jsx'
 import ToastNotif from '../components/ToastNotif.jsx'
 import { api } from '../services/api.js'
-
-function toProductShape(p, variantes = []) {
-  const categoriaNombre = p.categoria?.nombre ?? p.Categoria?.nombre
-  const variantesActivas = variantes.filter(v => v.activo !== false)
-  return {
-    id: p.idProducto,
-    name: p.nombre,
-    image: p.imagenUrl || 'https://placehold.co/400x300?text=Sin+imagen',
-    price: p.precioBase,
-    category: categoriaNombre?.toLowerCase() ?? 'general',
-    categoryLabel: categoriaNombre ?? 'General',
-    description: p.descripcion ?? '',
-    details: '',
-    care: '',
-    sizes: variantesActivas.map(v => v.talle),
-    variantes: variantesActivas,
-  }
-}
+import { toProductShape } from '../utils/catalog.js'
 
 function ProductDetailPage() {
   const { productId } = useParams()
@@ -49,8 +32,8 @@ function ProductDetailPage() {
       .finally(() => setLoading(false))
   }, [productId])
 
-  const handleAddToCart = (selectedProduct) => {
-    setToast(`${selectedProduct.name} agregado al carrito`)
+  const handleAddToCart = (selectedProduct, _selectedVariant, errorMessage) => {
+    setToast(errorMessage || `${selectedProduct.name} agregado al carrito`)
   }
 
   if (loading) {

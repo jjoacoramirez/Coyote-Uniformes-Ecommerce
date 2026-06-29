@@ -11,7 +11,7 @@ export default function AdminCategoriaForm() {
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
 
-  const [form, setForm] = useState({ nombre: '', descripcion: '' })
+  const [form, setForm] = useState({ nombre: '', descripcion: '', imagenUrl: '' })
 
   useEffect(() => {
     if (!modoEditar) return
@@ -21,6 +21,7 @@ export default function AdminCategoriaForm() {
         setForm({
           nombre: cat.nombre ?? '',
           descripcion: cat.descripcion ?? '',
+          imagenUrl: cat.imagenUrl ?? '',
         })
       )
       .catch((e) => setError(e.message))
@@ -38,6 +39,7 @@ export default function AdminCategoriaForm() {
       const body = {
         nombre: form.nombre.trim(),
         descripcion: form.descripcion.trim(),
+        imagenUrl: form.imagenUrl.trim() || null,
       }
       if (modoEditar) {
         await api.put(`/categorias/${id}`, body)
@@ -143,6 +145,22 @@ export default function AdminCategoriaForm() {
                 value={form.descripcion}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, descripcion: e.target.value }))
+                }
+              />
+            </div>
+
+            <div className="pf-field">
+              <label className="pf-label" htmlFor="catf-imagen">
+                URL de imagen
+              </label>
+              <input
+                id="catf-imagen"
+                className="pf-input"
+                type="url"
+                placeholder="https://..."
+                value={form.imagenUrl}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, imagenUrl: e.target.value }))
                 }
               />
             </div>

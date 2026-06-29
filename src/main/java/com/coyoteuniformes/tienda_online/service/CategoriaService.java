@@ -37,6 +37,7 @@ public class CategoriaService implements ICategoriaService {
 
         existente.setNombre(categoria.getNombre());
         existente.setDescripcion(categoria.getDescripcion());
+        existente.setImagenUrl(categoria.getImagenUrl());
 
         return categoriaRepository.save(existente);
 

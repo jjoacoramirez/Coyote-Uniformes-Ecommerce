@@ -38,13 +38,9 @@ export default function UserAccount() {
   const [exitoPass, setExitoPass] = useState('')
   const [guardandoPass, setGuardandoPass] = useState(false)
 
-  const [notifEmail, setNotifEmail] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('up_notif_email') ?? 'true') } catch { return true }
-  })
-  const [notifSms, setNotifSms] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('up_notif_sms') ?? 'false') } catch { return false }
-  })
-  const [idioma, setIdioma] = useState(() => localStorage.getItem('up_idioma') || 'es')
+  const [notifEmail, setNotifEmail] = useState(true)
+  const [notifSms, setNotifSms] = useState(false)
+  const [idioma, setIdioma] = useState('es')
   const [prefsSaved, setPrefsSaved] = useState(false)
 
   const [pedidos, setPedidos] = useState([])
@@ -143,14 +139,6 @@ export default function UserAccount() {
     }
   }
 
-  const handleGuardarPrefs = () => {
-    localStorage.setItem('up_notif_email', JSON.stringify(notifEmail))
-    localStorage.setItem('up_notif_sms', JSON.stringify(notifSms))
-    localStorage.setItem('up_idioma', idioma)
-    setPrefsSaved(true)
-    setTimeout(() => setPrefsSaved(false), 2000)
-  }
-
   const direccionCompleta = Boolean(
     direccion.calle.trim() &&
     direccion.numero.trim() &&
@@ -158,6 +146,11 @@ export default function UserAccount() {
     direccion.provincia.trim() &&
     direccion.codigoPostal.trim()
   )
+
+  const handleGuardarPrefs = () => {
+    setPrefsSaved(true)
+    setTimeout(() => setPrefsSaved(false), 2000)
+  }
 
   const handleGuardarDireccion = async () => {
     setErrorDireccion('')
@@ -288,17 +281,6 @@ export default function UserAccount() {
                 <path fillRule="evenodd" d="M5 9V7a5 5 0 0 1 10 0v2a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2zm8-2v2H7V7a3 3 0 0 1 6 0z" clipRule="evenodd" />
               </svg>
               Seguridad
-            </button>
-
-            <button
-              type="button"
-              className={`up-sidebar-link${activeSection === 'notificaciones' ? ' active' : ''}`}
-              onClick={() => scrollTo(secNotif, 'notificaciones')}
-            >
-              <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
-                <path d="M10 2a6 6 0 0 0-6 6v3.586l-.707.707A1 1 0 0 0 4 14h12a1 1 0 0 0 .707-1.707L16 11.586V8a6 6 0 0 0-6-6zm0 16a3 3 0 0 1-2.83-2h5.66A3 3 0 0 1 10 18z" />
-              </svg>
-              Notificaciones
             </button>
 
             <button

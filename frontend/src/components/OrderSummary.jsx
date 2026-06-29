@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext.jsx'
-import { cartSummary, formatPrice } from '../data/products.js'
+import { formatPrice } from '../utils/format.js'
 
 function calcularDescuento(subtotal, coupon) {
   if (!coupon) return 0
@@ -24,7 +24,7 @@ function OrderSummary({ ctaLabel, ctaTo, onCtaClick, paymentMethod, showCoupon =
   }, 0)
   const totalQuantity = cartItems.reduce((acc, item) => acc + item.quantity, 0)
   const discount = calcularDescuento(subtotal, appliedCoupon)
-  const total = subtotal - discount + cartSummary.shipping + cartSummary.tax
+  const total = subtotal - discount
 
   async function handleApply(e) {
     e.preventDefault()
@@ -95,14 +95,6 @@ function OrderSummary({ ctaLabel, ctaTo, onCtaClick, paymentMethod, showCoupon =
             <dd>-{formatPrice(discount)}</dd>
           </div>
         )}
-        <div>
-          <dt>Envio estimado</dt>
-          <dd>{cartSummary.shipping === 0 ? 'Gratis' : formatPrice(cartSummary.shipping)}</dd>
-        </div>
-        <div>
-          <dt>IVA</dt>
-          <dd>{formatPrice(cartSummary.tax)}</dd>
-        </div>
         {paymentMethod && (
           <div>
             <dt>Medio de pago</dt>

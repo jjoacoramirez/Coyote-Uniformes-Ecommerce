@@ -1,40 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import Layout from '../components/Layout.jsx'
 import ProductCard from '../components/ProductCard.jsx'
-import ToastNotif from '../components/ToastNotif.jsx'
-import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../services/api.js'
-
-function toProductShape(producto) {
-  const categoriaNombre = producto.categoria?.nombre ?? producto.Categoria?.nombre
-  return {
-    id: producto.idProducto,
-    name: producto.nombre,
-    image: producto.imagenUrl || 'https://placehold.co/400x300?text=Sin+imagen',
-    price: producto.precioBase,
-    category: categoriaNombre?.toLowerCase() ?? 'general',
-    categoryLabel: categoriaNombre ?? 'General',
-    sizes: [],
-  }
-}
+import { toCategoryShape, toProductShape } from '../utils/catalog.js'
 
 function Products() {
   const [searchParams] = useSearchParams()
   const initialCategory = searchParams.get('categoria') ?? 'all'
   const [category, setCategory] = useState(initialCategory)
   const [sort, setSort] = useState('relevance')
-  const [toast, setToast] = useState('')
   const [products, setProducts] = useState([])
   const [categoryFilters, setCategoryFilters] = useState([{ id: 'all', label: 'Todas' }])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const navigate = useNavigate()
-  const { user } = useAuth()
-
-  useEffect(() => {
-    setCategory(searchParams.get('categoria') ?? 'all')
-  }, [searchParams])
 
   useEffect(() => {
     Promise.all([api.get('/productos'), api.get('/categorias')])
@@ -43,7 +22,10 @@ function Products() {
         setProducts(mapped)
         const filters = [
           { id: 'all', label: 'Todas' },
-          ...categoriasData.map((c) => ({ id: c.nombre.toLowerCase(), label: c.nombre })),
+          ...categoriasData.map((c) => {
+            const category = toCategoryShape(c)
+            return { id: category.id, label: category.title }
+          }),
         ]
         setCategoryFilters(filters)
       })
@@ -67,18 +49,8 @@ function Products() {
     return filtered
   }, [products, category, sort])
 
-  const handleAdd = (product) => {
-    if (!user) {
-      setToast(`${product.name} requiere iniciar sesion`)
-      window.setTimeout(() => navigate('/login'), 900)
-      return
-    }
-    navigate(`/productos/${product.id}`)
-  }
-
   return (
     <Layout>
-      <ToastNotif message={toast} />
       <section className="catalog-page">
         <aside className="filters-panel">
           <h2>Catalogo</h2>

@@ -90,6 +90,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/descuentos/**").hasRole("ADMIN")
 
                 // Detalles y pagos → solo lectura para USER, escritura solo ADMIN
+                .requestMatchers(HttpMethod.POST, "/contactos").permitAll()
+                .requestMatchers(HttpMethod.GET, "/contactos", "/contactos/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET,    "/detalles-pedido/**").hasAnyRole("USER", "ADMIN")
                 .requestMatchers(HttpMethod.POST,   "/detalles-pedido/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT,    "/detalles-pedido/**").hasRole("ADMIN")

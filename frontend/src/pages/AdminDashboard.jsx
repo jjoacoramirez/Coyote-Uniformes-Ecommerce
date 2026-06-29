@@ -1,13 +1,25 @@
+import { useEffect, useState } from 'react'
 import Layout from '../components/Layout.jsx'
-import { products, formatPrice } from '../data/products.js'
-
-const orders = [
-  { id: 'CU-1027', client: 'Colegio San Martin', status: 'Pagado', total: 72500 },
-  { id: 'CU-1028', client: 'Clinica Norte', status: 'En preparacion', total: 163000 },
-  { id: 'CU-1029', client: 'Estudio Florida', status: 'Pendiente', total: 128000 },
-]
+import { api } from '../services/api.js'
+import { formatPrice } from '../utils/format.js'
 
 function AdminDashboard() {
+  const [products, setProducts] = useState([])
+  const [orders, setOrders] = useState([])
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    Promise.all([api.get('/productos/admin'), api.get('/pedidos')])
+      .then(([productosData, pedidosData]) => {
+        setProducts(productosData)
+        setOrders(pedidosData)
+      })
+      .catch(() => setError('No se pudieron cargar los datos del panel.'))
+  }, [])
+
+  const totalVentas = orders.reduce((acc, order) => acc + Number(order.total ?? 0), 0)
+  const activeOrders = orders.filter((order) => order.estado !== 'FINALIZADO').length
+
   return (
     <Layout>
       <section className="admin-page">
@@ -23,18 +35,20 @@ function AdminDashboard() {
 
         <div className="metric-grid">
           <article>
-            <span>Ventas del mes</span>
-            <strong>$ 1.284.000</strong>
+            <span>Ventas registradas</span>
+            <strong>{formatPrice(totalVentas)}</strong>
           </article>
           <article>
             <span>Pedidos activos</span>
-            <strong>18</strong>
+            <strong>{activeOrders}</strong>
           </article>
           <article>
             <span>Productos publicados</span>
             <strong>{products.length}</strong>
           </article>
         </div>
+
+        {error && <p className="form-error">{error}</p>}
 
         <div className="admin-grid">
           <section className="admin-panel">
@@ -50,11 +64,11 @@ function AdminDashboard() {
               </thead>
               <tbody>
                 {products.map((product) => (
-                  <tr key={product.id}>
-                    <td>{product.name}</td>
-                    <td>{product.categoryLabel}</td>
-                    <td>{formatPrice(product.price)}</td>
-                    <td>Disponible</td>
+                  <tr key={product.idProducto}>
+                    <td>{product.nombre}</td>
+                    <td>{product.categoriaNombre}</td>
+                    <td>{formatPrice(product.precioBase)}</td>
+                    <td>{product.stockTotal}</td>
                   </tr>
                 ))}
               </tbody>
@@ -74,10 +88,10 @@ function AdminDashboard() {
               </thead>
               <tbody>
                 {orders.map((order) => (
-                  <tr key={order.id}>
-                    <td>{order.id}</td>
-                    <td>{order.client}</td>
-                    <td>{order.status}</td>
+                  <tr key={order.idPedido}>
+                    <td>#{order.idPedido}</td>
+                    <td>Cliente {order.idCliente}</td>
+                    <td>{order.estado}</td>
                     <td>{formatPrice(order.total)}</td>
                   </tr>
                 ))}

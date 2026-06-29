@@ -1,13 +1,37 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout.jsx'
 import OrderSummary from '../components/OrderSummary.jsx'
 import Stepper from '../components/Stepper.jsx'
+import { useCart } from '../context/CartContext.jsx'
+import { api } from '../services/api.js'
 
 const methods = ['Tarjeta de credito', 'Mercado Pago', 'Transferencia bancaria']
 
 function Payment() {
+  const navigate = useNavigate()
+  const { cartItems } = useCart()
   const [method, setMethod] = useState(methods[1])
+  const [error, setError] = useState('')
+  const [confirming, setConfirming] = useState(false)
+
+  async function handleConfirm() {
+    if (cartItems.length === 0) {
+      setError('El carrito esta vacio.')
+      return
+    }
+
+    setConfirming(true)
+    setError('')
+    try {
+      const checkout = await api.post('/carritos/me/checkout', { metodoPago: method })
+      navigate(`/checkout/confirmacion?pedido=${checkout.idPedido}`, { state: { checkout } })
+    } catch (err) {
+      setError(err.message || 'No se pudo confirmar el pago.')
+    } finally {
+      setConfirming(false)
+    }
+  }
 
   return (
     <Layout>
@@ -56,9 +80,11 @@ function Payment() {
               </div>
             )}
 
-            <Link className="button primary full" to="/checkout/confirmacion">
-              Confirmar pago
-            </Link>
+            {error && <p className="form-error">{error}</p>}
+
+            <button className="button primary full" type="button" onClick={handleConfirm} disabled={confirming}>
+              {confirming ? 'Confirmando...' : 'Confirmar pago'}
+            </button>
           </div>
 
           <OrderSummary paymentMethod={method} />

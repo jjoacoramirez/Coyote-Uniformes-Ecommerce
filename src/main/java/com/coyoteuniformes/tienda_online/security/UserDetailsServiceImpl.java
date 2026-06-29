@@ -28,7 +28,21 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         return new User(
                 usuario.getEmail(),
                 usuario.getContrasena(),
-                List.of(new SimpleGrantedAuthority(usuario.getRol()))
+                List.of(new SimpleGrantedAuthority(toSpringAuthority(usuario.getRol())))
         );
+    }
+
+    private String toSpringAuthority(String rol) {
+        String normalizedRol = String.valueOf(rol).trim().toUpperCase();
+
+        if ("ADMINISTRADOR".equals(normalizedRol) || "ADMIN".equals(normalizedRol)) {
+            return "ROLE_ADMIN";
+        }
+
+        if ("CLIENTE".equals(normalizedRol) || "USER".equals(normalizedRol) || "USUARIO".equals(normalizedRol)) {
+            return "ROLE_USER";
+        }
+
+        return normalizedRol.startsWith("ROLE_") ? normalizedRol : "ROLE_" + normalizedRol;
     }
 }

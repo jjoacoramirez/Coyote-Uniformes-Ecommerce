@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { api } from '../services/api.js'
 
 const MOTIVOS = ['Uniformes escolares', 'Uniformes medicos', 'Compra mayorista']
 
@@ -10,23 +11,36 @@ function Formulario() {
     mensaje: '',
   })
   const [enviado, setEnviado] = useState(false)
+  const [nombreEnviado, setNombreEnviado] = useState('')
+  const [enviando, setEnviando] = useState(false)
+  const [error, setError] = useState('')
 
   function handleChange(e) {
     const { name, value } = e.target
     setCampos(prev => ({ ...prev, [name]: value }))
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
-    setEnviado(true)
-    setCampos({ nombre: '', correo: '', motivo: MOTIVOS[0], mensaje: '' })
+    setEnviando(true)
+    setError('')
+    try {
+      await api.post('/contactos', campos)
+      setNombreEnviado(campos.nombre)
+      setEnviado(true)
+      setCampos({ nombre: '', correo: '', motivo: MOTIVOS[0], mensaje: '' })
+    } catch (err) {
+      setError(err.message || 'No se pudo enviar el mensaje.')
+    } finally {
+      setEnviando(false)
+    }
   }
 
   if (enviado) {
     return (
       <div className="form-panel">
         <h2>Mensaje enviado</h2>
-        <p>Gracias, <strong>{campos.nombre || 'usuario'}</strong>. Te contactamos a la brevedad.</p>
+        <p>Gracias, <strong>{nombreEnviado || 'usuario'}</strong>. Te contactamos a la brevedad.</p>
         <button className="button primary" type="button" onClick={() => setEnviado(false)}>
           Enviar otro mensaje
         </button>
@@ -76,8 +90,9 @@ function Formulario() {
           />
         </label>
       </div>
-      <button className="button primary" type="submit">
-        Enviar mensaje
+      {error && <p className="form-error">{error}</p>}
+      <button className="button primary" type="submit" disabled={enviando}>
+        {enviando ? 'Enviando...' : 'Enviar mensaje'}
       </button>
     </form>
   )

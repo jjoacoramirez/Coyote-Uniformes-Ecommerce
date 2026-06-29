@@ -1173,22 +1173,6 @@ p {
   font-weight: 800;
 }
 
-.demo-accounts {
-  display: grid;
-  gap: 5px;
-  padding: 12px;
-  text-align: left;
-  color: var(--color-muted);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 0.82rem;
-}
-
-.demo-accounts strong {
-  color: var(--color-secondary);
-}
-
 .form-error {
   color: var(--color-primary);
   font-weight: 800;

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { formatPrice } from '../data/products.js'
+import { formatPrice } from '../utils/format.js'
 
 function ProductCard({ product }) {
   return (
