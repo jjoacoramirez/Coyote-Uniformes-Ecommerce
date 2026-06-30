@@ -6,6 +6,7 @@ import com.coyoteuniformes.tienda_online.exceptions.DescuentoException;
 import com.coyoteuniformes.tienda_online.repository.DescuentoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -48,6 +49,23 @@ public class DescuentoService implements IDescuentoService {
         }
 
         return descuento;
+    }
+
+    @Override
+    @Transactional
+    public Descuento registrarUso(String codigo) {
+        // Revalida (activo, vigencia y tope de usos) antes de sumar el uso.
+        Descuento descuento = validarDescuento(codigo);
+
+        int usosActuales = descuento.getUsoActual() != null ? descuento.getUsoActual() : 0;
+        descuento.setUsoActual(usosActuales + 1);
+
+        // Al alcanzar el máximo de usos, el cupón queda inhabilitado.
+        if (descuento.getUsoMaximo() != null && descuento.getUsoActual() >= descuento.getUsoMaximo()) {
+            descuento.setActivo(false);
+        }
+
+        return descuentoRepository.save(descuento);
     }
 
     @Override

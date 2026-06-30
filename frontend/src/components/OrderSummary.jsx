@@ -5,10 +5,15 @@ import { formatPrice } from '../utils/format.js'
 
 function calcularDescuento(subtotal, coupon) {
   if (!coupon) return 0
+  // El descuento solo aplica si se alcanza el monto mínimo de compra.
+  const minimo = Number(coupon.montoMinimo) || 0
+  if (subtotal < minimo) return 0
   const valor = Number(coupon.valor)
   if (coupon.tipo === 'PORCENTAJE') return Math.round(subtotal * (valor / 100))
   return Math.min(valor, subtotal)
 }
+
+const IVA_RATE = 0.21
 
 function OrderSummary({ ctaLabel, ctaTo, onCtaClick, paymentMethod, showCoupon = false }) {
   const { cartItems, appliedCoupon, applyCoupon, removeCoupon } = useCart()
@@ -24,14 +29,16 @@ function OrderSummary({ ctaLabel, ctaTo, onCtaClick, paymentMethod, showCoupon =
   }, 0)
   const totalQuantity = cartItems.reduce((acc, item) => acc + item.quantity, 0)
   const discount = calcularDescuento(subtotal, appliedCoupon)
-  const total = subtotal - discount
+  const baseImponible = subtotal - discount
+  const iva = Math.round(baseImponible * IVA_RATE)
+  const total = baseImponible + iva
 
   async function handleApply(e) {
     e.preventDefault()
     if (!inputCoupon.trim()) return
     setApplying(true)
     try {
-      await applyCoupon(inputCoupon)
+      await applyCoupon(inputCoupon, subtotal)
       setError('')
       setInputCoupon('')
     } catch (err) {
@@ -95,6 +102,10 @@ function OrderSummary({ ctaLabel, ctaTo, onCtaClick, paymentMethod, showCoupon =
             <dd>-{formatPrice(discount)}</dd>
           </div>
         )}
+        <div>
+          <dt>IVA (21%)</dt>
+          <dd>{formatPrice(iva)}</dd>
+        </div>
         {paymentMethod && (
           <div>
             <dt>Medio de pago</dt>

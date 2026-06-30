@@ -3,6 +3,7 @@ package com.coyoteuniformes.tienda_online.controllers;
 import com.coyoteuniformes.tienda_online.exceptions.AdministradorException;
 import com.coyoteuniformes.tienda_online.exceptions.CarritoException;
 import com.coyoteuniformes.tienda_online.exceptions.ClienteException;
+import com.coyoteuniformes.tienda_online.exceptions.DescuentoException;
 import com.coyoteuniformes.tienda_online.exceptions.DetallePedidoException;
 import com.coyoteuniformes.tienda_online.exceptions.ItemCarritoException;
 import com.coyoteuniformes.tienda_online.exceptions.PedidoException;
@@ -12,6 +13,7 @@ import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -33,7 +35,8 @@ public class GlobalExceptionHandler {
             DetallePedidoException.class,
             CarritoException.class,
             ItemCarritoException.class,
-            ProductoException.class
+            ProductoException.class,
+            DescuentoException.class
     })
     public ResponseEntity<Map<String, Object>> handleBusinessException(RuntimeException exception) {
         return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage());
@@ -58,6 +61,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(DataIntegrityViolationException exception) {
         return buildResponse(HttpStatus.BAD_REQUEST, "No se puede completar la operacion porque el registro esta relacionado con otros datos.");
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<Map<String, Object>> handleAuthentication(AuthenticationException exception) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, "Correo o contraseña incorrectos.");
     }
 
     @ExceptionHandler(Exception.class)

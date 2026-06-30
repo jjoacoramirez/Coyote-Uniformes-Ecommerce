@@ -146,12 +146,10 @@ export default function AdminProductoForm() {
   function handleGuardarVariante(e) {
     e.preventDefault()
     const f = modalVar.form
-    if (!f.talle.trim()) {
-      setErrorVar('El talle es obligatorio.')
-      return
-    }
-    if (!f.color.trim()) {
-      setErrorVar('El color es obligatorio.')
+    const talle = f.talle.trim()
+    const color = f.color.trim()
+    if (!talle && !color) {
+      setErrorVar('Indicá al menos un talle o un color.')
       return
     }
     if (f.stock === '' || Number(f.stock) < 0) {
@@ -159,20 +157,22 @@ export default function AdminProductoForm() {
       return
     }
     if (modalVar.key === null) {
+      const talleNorm = talle.toLowerCase()
+      const colorNorm = color.toLowerCase()
       const dup = variantes.find(
         (v) =>
-          v.talle.toLowerCase() === f.talle.toLowerCase().trim() &&
-          v.color.toLowerCase() === f.color.toLowerCase().trim()
+          (v.talle ?? '').toLowerCase().trim() === talleNorm &&
+          (v.color ?? '').toLowerCase().trim() === colorNorm
       )
       if (dup) {
-        setErrorVar('Ya existe una variante con ese talle y color.')
+        setErrorVar('Ya existe una variante con esa combinación de talle y color.')
         return
       }
       setVariantes((prev) => [
         ...prev,
         {
-          talle: f.talle.trim(),
-          color: f.color.trim(),
+          talle,
+          color,
           stock: Number(f.stock),
           sku: f.sku.trim(),
           precio: Number(f.precio) || 0,
@@ -186,8 +186,8 @@ export default function AdminProductoForm() {
           v._key === modalVar.key
             ? {
                 ...v,
-                talle: f.talle.trim(),
-                color: f.color.trim(),
+                talle,
+                color,
                 stock: Number(f.stock),
                 sku: f.sku.trim(),
                 precio: Number(f.precio) || 0,
@@ -250,8 +250,8 @@ export default function AdminProductoForm() {
       for (const v of variantes) {
         const body = {
           producto: { idProducto: savedId },
-          talle: v.talle,
-          color: v.color,
+          talle: v.talle?.trim() || null,
+          color: v.color?.trim() || null,
           stock: Number(v.stock),
           sku: v.sku || null,
           precio: Number(v.precio) || 0,
@@ -659,9 +659,7 @@ export default function AdminProductoForm() {
             <form className="pf-var-form" onSubmit={handleGuardarVariante}>
               <div className="pf-var-row">
                 <div className="pf-field">
-                  <label className="pf-label">
-                    Talle <span aria-hidden="true">*</span>
-                  </label>
+                  <label className="pf-label">Talle</label>
                   <input
                     className="pf-input"
                     type="text"
@@ -677,9 +675,7 @@ export default function AdminProductoForm() {
                   />
                 </div>
                 <div className="pf-field">
-                  <label className="pf-label">
-                    Color <span aria-hidden="true">*</span>
-                  </label>
+                  <label className="pf-label">Color</label>
                   <input
                     className="pf-input"
                     type="text"
@@ -694,6 +690,9 @@ export default function AdminProductoForm() {
                   />
                 </div>
               </div>
+              <p style={{ fontSize: '0.78rem', color: 'var(--color-muted)', margin: '-6px 0 2px' }}>
+                Indicá al menos un talle o un color.
+              </p>
               <div className="pf-var-row">
                 <div className="pf-field">
                   <label className="pf-label">

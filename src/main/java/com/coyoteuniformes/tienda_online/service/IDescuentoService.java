@@ -9,6 +9,7 @@ public interface IDescuentoService {
     List<Descuento> getAllDescuentos();
     Descuento getDescuentoById(Long id);
     Descuento validarDescuento(String codigo);
+    Descuento registrarUso(String codigo);
     Descuento createDescuento(DescuentoDto dto);
     Descuento updateDescuento(Long id, DescuentoDto dto);
     void deleteDescuento(Long id);

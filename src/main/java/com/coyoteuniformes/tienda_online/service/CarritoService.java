@@ -2,6 +2,8 @@ package com.coyoteuniformes.tienda_online.service;
 
 import com.coyoteuniformes.tienda_online.entity.Carrito;
 import com.coyoteuniformes.tienda_online.entity.Cliente;
+import com.coyoteuniformes.tienda_online.entity.Descuento;
+import com.coyoteuniformes.tienda_online.entity.TipoDescuento;
 import com.coyoteuniformes.tienda_online.entity.ItemCarrito;
 import com.coyoteuniformes.tienda_online.entity.Pago;
 import com.coyoteuniformes.tienda_online.entity.Pedido;
@@ -29,6 +31,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -44,6 +47,7 @@ public class CarritoService implements ICarritoService {
     private final PedidoRepository pedidoRepository;
     private final UsuarioRepository usuarioRepository;
     private final VarianteProductoRepository varianteProductoRepository;
+    private final DescuentoService descuentoService;
 
     public CarritoService(
             CarritoRepository carritoRepository,
@@ -53,7 +57,8 @@ public class CarritoService implements ICarritoService {
             PagoRepository pagoRepository,
             PedidoRepository pedidoRepository,
             UsuarioRepository usuarioRepository,
-            VarianteProductoRepository varianteProductoRepository
+            VarianteProductoRepository varianteProductoRepository,
+            DescuentoService descuentoService
     ) {
         this.carritoRepository = carritoRepository;
         this.clienteRepository = clienteRepository;
@@ -63,6 +68,7 @@ public class CarritoService implements ICarritoService {
         this.pedidoRepository = pedidoRepository;
         this.usuarioRepository = usuarioRepository;
         this.varianteProductoRepository = varianteProductoRepository;
+        this.descuentoService = descuentoService;
     }
 
     public List<Carrito> getAllCarritos() {
@@ -166,9 +172,24 @@ public class CarritoService implements ICarritoService {
             throw new CarritoException("El carrito esta vacio");
         }
 
-        BigDecimal total = items.stream()
+        BigDecimal subtotal = items.stream()
                 .map(item -> item.getSubtotal() == null ? BigDecimal.ZERO : item.getSubtotal())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Aplica el cupón (si vino): descuenta del total y registra el uso.
+        BigDecimal total = subtotal;
+        if (request.getCodigoDescuento() != null && !request.getCodigoDescuento().isBlank()) {
+            BigDecimal descuento = calcularDescuento(request.getCodigoDescuento(), subtotal);
+            total = subtotal.subtract(descuento);
+            if (total.signum() < 0) {
+                total = BigDecimal.ZERO;
+            }
+            descuentoService.registrarUso(request.getCodigoDescuento());
+        }
+
+        // IVA 21% sobre el neto (subtotal - descuento).
+        BigDecimal iva = total.multiply(BigDecimal.valueOf(0.21)).setScale(0, RoundingMode.HALF_UP);
+        total = total.add(iva);
 
         Pedido pedido = pedidoRepository.save(Pedido.builder()
                 .idCliente(carrito.getCliente().getIdCliente())
@@ -206,6 +227,19 @@ public class CarritoService implements ICarritoService {
                 .estadoPago(pago.getEstadoPago())
                 .total(total)
                 .build();
+    }
+
+    private BigDecimal calcularDescuento(String codigo, BigDecimal subtotal) {
+        Descuento descuento = descuentoService.validarDescuento(codigo);
+        BigDecimal minimo = descuento.getMontoMinimo() != null ? descuento.getMontoMinimo() : BigDecimal.ZERO;
+        if (subtotal.compareTo(minimo) < 0) {
+            throw new CarritoException("El cupón requiere una compra mínima de " + minimo);
+        }
+        if (descuento.getTipo() == TipoDescuento.PORCENTAJE) {
+            return subtotal.multiply(descuento.getValor())
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        }
+        return descuento.getValor().min(subtotal);
     }
 
     private Carrito getOrCreateCarritoActivo(String email) {

@@ -10,7 +10,7 @@ const methods = ['Tarjeta de credito', 'Mercado Pago', 'Transferencia bancaria']
 
 function Payment() {
   const navigate = useNavigate()
-  const { cartItems } = useCart()
+  const { cartItems, appliedCoupon } = useCart()
   const [method, setMethod] = useState(methods[1])
   const [error, setError] = useState('')
   const [confirming, setConfirming] = useState(false)
@@ -24,7 +24,10 @@ function Payment() {
     setConfirming(true)
     setError('')
     try {
-      const checkout = await api.post('/carritos/me/checkout', { metodoPago: method })
+      const checkout = await api.post('/carritos/me/checkout', {
+        metodoPago: method,
+        codigoDescuento: appliedCoupon?.codigo ?? null,
+      })
       navigate(`/checkout/confirmacion?pedido=${checkout.idPedido}`, { state: { checkout } })
     } catch (err) {
       setError(err.message || 'No se pudo confirmar el pago.')

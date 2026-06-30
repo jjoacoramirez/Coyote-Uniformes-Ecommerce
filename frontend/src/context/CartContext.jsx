@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { useAuth } from './AuthContext.jsx'
 import { api } from '../services/api.js'
 import { toCartProductShape } from '../utils/catalog.js'
+import { formatPrice } from '../utils/format.js'
 
 const CartContext = createContext(null)
 
@@ -74,8 +75,12 @@ export function CartProvider({ children }) {
     syncCart(cart)
   }
 
-  async function applyCoupon(code) {
+  async function applyCoupon(code, subtotal = 0) {
     const descuento = await api.get(`/descuentos/validar/${encodeURIComponent(code.trim().toUpperCase())}`)
+    const minimo = Number(descuento.montoMinimo) || 0
+    if (minimo > 0 && subtotal < minimo) {
+      throw new Error(`Este cupón requiere una compra mínima de ${formatPrice(minimo)}.`)
+    }
     setAppliedCoupon(descuento)
   }
 

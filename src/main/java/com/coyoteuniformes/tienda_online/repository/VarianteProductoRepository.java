@@ -9,9 +9,9 @@ import java.util.List;
 
 public interface VarianteProductoRepository extends JpaRepository<VarianteProducto, Long>{
 
-    @Query("SELECT v FROM VarianteProducto v WHERE v.Producto.idProducto = :idProducto")
+    @Query("SELECT v FROM VarianteProducto v WHERE v.producto.idProducto = :idProducto")
     List<VarianteProducto> findByProducto_IdProducto(@Param("idProducto") Long idProducto);
 
-    @Query("SELECT COUNT(v) FROM VarianteProducto v WHERE v.Producto.idProducto = :idProducto")
+    @Query("SELECT COUNT(v) FROM VarianteProducto v WHERE v.producto.idProducto = :idProducto")
     long countByProductoId(@Param("idProducto") Long idProducto);
 }

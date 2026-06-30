@@ -27,7 +27,7 @@ public class VarianteProducto {
 
     @ManyToOne
     @JoinColumn(name = "id_producto", nullable = false)
-    private Producto Producto;
+    private Producto producto;
 
     private String talle;
     private String color;

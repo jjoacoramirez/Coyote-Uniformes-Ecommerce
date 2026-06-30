@@ -5,4 +5,6 @@ import lombok.Data;
 @Data
 public class CheckoutRequestDto {
     private String metodoPago;
+    // Código de cupón aplicado (opcional).
+    private String codigoDescuento;
 }
