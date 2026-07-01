@@ -34,7 +34,7 @@ function App() {
   // Sincroniza el carrito con la sesion: al loguearse lo trae del backend,
   // al desloguearse lo limpia (lo que antes hacia CartContext).
   useEffect(() => {
-    if (user) {
+    if (user?.role === 'cliente') {
       dispatch(fetchCarrito())
     } else {
       dispatch(clearCarrito())
