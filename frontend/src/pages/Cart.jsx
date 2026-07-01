@@ -8,8 +8,9 @@ import { formatPrice } from '../utils/format.js'
 
 function Cart() {
   const dispatch = useDispatch()
-  const { items: cartItems, status } = useSelector((s) => s.carrito)
+  const { items: cartItems, status, itemStatus, itemError } = useSelector((s) => s.carrito)
   const loadingCart = status === 'loading'
+  const updatingCart = itemStatus === 'loading'
 
   if (loadingCart) {
     return (
@@ -18,6 +19,8 @@ function Cart() {
           <Stepper activeStep={0} />
           <div className="checkout-main">
             <h1>Tu carrito</h1>
+
+            {itemError && <p className="form-error">{itemError}</p>}
             <p>Cargando carrito...</p>
           </div>
         </section>
@@ -62,6 +65,7 @@ function Cart() {
                       <div className="quantity-control">
                         <button
                           type="button"
+                          disabled={updatingCart || quantity <= 1}
                           onClick={() => dispatch(updateItem({ idItemCarrito, cantidad: quantity - 1 }))}
                         >
                           -
@@ -69,6 +73,7 @@ function Cart() {
                         <span>{quantity}</span>
                         <button
                           type="button"
+                          disabled={updatingCart}
                           onClick={() => dispatch(updateItem({ idItemCarrito, cantidad: quantity + 1 }))}
                         >
                           +
@@ -77,6 +82,7 @@ function Cart() {
                       <button
                         className="cart-remove"
                         type="button"
+                        disabled={updatingCart}
                         onClick={() => dispatch(removeItem(idItemCarrito))}
                       >
                         Quitar

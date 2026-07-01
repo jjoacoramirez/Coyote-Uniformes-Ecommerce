@@ -18,7 +18,11 @@ function toCartItems(cart) {
   }))
 }
 
-export const fetchCarrito = createAsyncThunk('carrito/fetch', () => api.get('/carritos/me'))
+export const fetchCarrito = createAsyncThunk(
+  'carrito/fetch',
+  () => api.get('/carritos/me'),
+  { condition: (_, { getState }) => getState().carrito.status === 'idle' }
+)
 
 export const addItem = createAsyncThunk('carrito/addItem', (variante) => {
   if (!variante?.idVariante) {
@@ -55,6 +59,8 @@ const initialState = {
   error: null,
   addStatus: 'idle',
   addError: null,
+  itemStatus: 'idle',
+  itemError: null,
   couponStatus: 'idle',
   couponError: null,
   checkout: null,
@@ -75,6 +81,9 @@ const carritoSlice = createSlice({
       state.items = []
       state.appliedCoupon = null
       state.status = 'idle'
+      state.error = null
+      state.itemStatus = 'idle'
+      state.itemError = null
     },
     clearCheckout(state) {
       state.checkout = null
@@ -100,8 +109,12 @@ const carritoSlice = createSlice({
       .addCase(addItem.pending, (s) => { s.addStatus = 'loading'; s.addError = null })
       .addCase(addItem.fulfilled, (s, a) => { s.addStatus = 'succeeded'; syncCart(s, a) })
       .addCase(addItem.rejected, (s, a) => { s.addStatus = 'failed'; s.addError = a.error.message })
-      .addCase(updateItem.fulfilled, syncCart)
-      .addCase(removeItem.fulfilled, syncCart)
+      .addCase(updateItem.pending, (s) => { s.itemStatus = 'loading'; s.itemError = null })
+      .addCase(updateItem.fulfilled, (s, a) => { s.itemStatus = 'succeeded'; syncCart(s, a) })
+      .addCase(updateItem.rejected, (s, a) => { s.itemStatus = 'failed'; s.itemError = a.error.message })
+      .addCase(removeItem.pending, (s) => { s.itemStatus = 'loading'; s.itemError = null })
+      .addCase(removeItem.fulfilled, (s, a) => { s.itemStatus = 'succeeded'; syncCart(s, a) })
+      .addCase(removeItem.rejected, (s, a) => { s.itemStatus = 'failed'; s.itemError = a.error.message })
 
       .addCase(applyCoupon.pending, (s) => { s.couponStatus = 'loading'; s.couponError = null })
       .addCase(applyCoupon.fulfilled, (s, a) => { s.couponStatus = 'succeeded'; s.appliedCoupon = a.payload })

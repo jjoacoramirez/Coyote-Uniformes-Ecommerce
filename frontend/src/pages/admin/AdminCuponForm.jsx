@@ -6,7 +6,6 @@ import {
   updateDescuento,
   fetchDescuentoById,
   resetDescuentoSave,
-  clearDescuentoActual,
 } from '../../store/slices/descuentosSlice.js'
 
 function toInputDate(val) {
@@ -35,7 +34,10 @@ export default function AdminCuponForm() {
   const dispatch = useDispatch()
   const modoEditar = !!id
 
-  const { current, currentStatus, currentError, saveStatus, saveError } = useSelector((s) => s.descuentos)
+  const current = useSelector((s) => s.descuentos.byId[id])
+  const currentStatus = useSelector((s) => s.descuentos.byIdStatus[id] ?? 'idle')
+  const currentError = useSelector((s) => s.descuentos.byIdError[id])
+  const { saveStatus, saveError } = useSelector((s) => s.descuentos)
 
   const [form, setForm] = useState(FORM_VACIO)
   const [localError, setLocalError] = useState('')
@@ -43,9 +45,11 @@ export default function AdminCuponForm() {
 
   useEffect(() => {
     dispatch(resetDescuentoSave())
-    if (modoEditar) dispatch(fetchDescuentoById(id))
-    return () => dispatch(clearDescuentoActual())
-  }, [id, modoEditar, dispatch])
+  }, [dispatch])
+
+  useEffect(() => {
+    if (modoEditar && currentStatus === 'idle') dispatch(fetchDescuentoById(id))
+  }, [id, modoEditar, currentStatus, dispatch])
 
   useEffect(() => {
     if (modoEditar && current) {

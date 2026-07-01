@@ -126,7 +126,20 @@ export default function AdminCupones() {
   }, [cupones, busqueda, tipoFiltro, estadoFiltro, ordenFiltro])
 
   function handleToggleActivo(c) {
-    dispatch(updateDescuento({ id: c.idDescuento, body: { activo: !c.activo } }))
+    dispatch(updateDescuento({
+      id: c.idDescuento,
+      body: {
+        codigo: c.codigo,
+        tipo: c.tipo,
+        valor: c.valor,
+        fechaInicio: c.fechaInicio,
+        fechaFin: c.fechaFin,
+        montoMinimo: c.montoMinimo,
+        usoMaximo: c.usoMaximo,
+        usoActual: c.usoActual,
+        activo: !c.activo,
+      },
+    }))
   }
 
   function handleEliminar(id, codigo) {

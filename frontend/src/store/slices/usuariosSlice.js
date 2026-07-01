@@ -1,7 +1,11 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { api } from '../../services/api.js'
 
-export const fetchMe = createAsyncThunk('usuarios/fetchMe', () => api.get('/usuarios/me'))
+export const fetchMe = createAsyncThunk(
+  'usuarios/fetchMe',
+  () => api.get('/usuarios/me'),
+  { condition: (_, { getState }) => getState().usuarios.status === 'idle' }
+)
 export const updatePerfil = createAsyncThunk('usuarios/updatePerfil', (body) => api.put('/usuarios/me', body))
 export const updateDireccion = createAsyncThunk('usuarios/updateDireccion', (body) => api.put('/usuarios/me', body))
 export const updatePassword = createAsyncThunk('usuarios/updatePassword', (body) => api.put('/usuarios/me/password', body))

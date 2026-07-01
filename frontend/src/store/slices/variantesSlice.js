@@ -1,12 +1,14 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { api } from '../../services/api.js'
+import { deleteProducto, guardarProducto } from './productosSlice.js'
 
 export const fetchVariantesByProducto = createAsyncThunk(
   'variantes/fetchByProducto',
   async (productoId) => {
     const variantes = await api.get(`/variantes/producto/${productoId}`)
     return { productoId, variantes: variantes ?? [] }
-  }
+  },
+  { condition: (id, { getState }) => getState().variantes.statusByProducto[id] == null }
 )
 
 const variantesSlice = createSlice({
@@ -30,6 +32,14 @@ const variantesSlice = createSlice({
       .addCase(fetchVariantesByProducto.rejected, (s, a) => {
         s.statusByProducto[a.meta.arg] = 'failed'
         s.error = a.error.message
+      })
+      .addCase(guardarProducto.fulfilled, (s, a) => {
+        delete s.byProducto[a.payload]
+        delete s.statusByProducto[a.payload]
+      })
+      .addCase(deleteProducto.fulfilled, (s, a) => {
+        delete s.byProducto[a.payload]
+        delete s.statusByProducto[a.payload]
       })
   },
 })

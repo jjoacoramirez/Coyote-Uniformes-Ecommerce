@@ -26,14 +26,10 @@ import Shipping from './pages/Shipping.jsx'
 function App() {
   const dispatch = useDispatch()
   const user = useSelector((s) => s.auth.user)
-  const token = useSelector((s) => s.auth.token)
 
-  // Al iniciar la app, si hay un token respaldado (sessionStorage) restaura la
-  // sesion pidiendo el perfil; si el token ya no sirve, se limpia solo.
   useEffect(() => {
-    if (token && !user) dispatch(restoreSession())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    dispatch(restoreSession())
+  }, [dispatch])
 
   // Sincroniza el carrito con la sesion: al loguearse lo trae del backend,
   // al desloguearse lo limpia (lo que antes hacia CartContext).

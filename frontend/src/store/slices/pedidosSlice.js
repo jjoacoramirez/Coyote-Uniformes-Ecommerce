@@ -1,7 +1,11 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { api } from '../../services/api.js'
 
-export const fetchPedidos = createAsyncThunk('pedidos/fetchAll', () => api.get('/pedidos'))
+export const fetchPedidos = createAsyncThunk(
+  'pedidos/fetchAll',
+  () => api.get('/pedidos'),
+  { condition: (_, { getState }) => getState().pedidos.status === 'idle' }
+)
 
 const pedidosSlice = createSlice({
   name: 'pedidos',

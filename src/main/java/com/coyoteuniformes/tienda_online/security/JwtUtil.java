@@ -16,6 +16,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtUtil {
 
+    public static final String COOKIE_NAME = "coyote_token";
+
     @Value("${jwt.secret}")
     private String secret;
 
@@ -57,6 +59,10 @@ public class JwtUtil {
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         return extractUsername(token).equals(userDetails.getUsername()) && !isTokenExpired(token);
+    }
+
+    public long getExpiration() {
+        return expiration;
     }
 
 }

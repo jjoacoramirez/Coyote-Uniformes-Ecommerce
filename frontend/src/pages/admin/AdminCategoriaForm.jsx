@@ -6,7 +6,6 @@ import {
   updateCategoria,
   fetchCategoriaById,
   resetCategoriaSave,
-  clearCategoriaActual,
 } from '../../store/slices/categoriasSlice.js'
 
 export default function AdminCategoriaForm() {
@@ -15,7 +14,10 @@ export default function AdminCategoriaForm() {
   const dispatch = useDispatch()
   const modoEditar = !!id
 
-  const { current, currentStatus, currentError, saveStatus, saveError } = useSelector((s) => s.categorias)
+  const current = useSelector((s) => s.categorias.byId[id])
+  const currentStatus = useSelector((s) => s.categorias.byIdStatus[id] ?? 'idle')
+  const currentError = useSelector((s) => s.categorias.byIdError[id])
+  const { saveStatus, saveError } = useSelector((s) => s.categorias)
 
   const [form, setForm] = useState({ nombre: '', descripcion: '', imagenUrl: '' })
   const [localError, setLocalError] = useState('')
@@ -23,9 +25,11 @@ export default function AdminCategoriaForm() {
 
   useEffect(() => {
     dispatch(resetCategoriaSave())
-    if (modoEditar) dispatch(fetchCategoriaById(id))
-    return () => dispatch(clearCategoriaActual())
-  }, [id, modoEditar, dispatch])
+  }, [dispatch])
+
+  useEffect(() => {
+    if (modoEditar && currentStatus === 'idle') dispatch(fetchCategoriaById(id))
+  }, [id, modoEditar, currentStatus, dispatch])
 
   useEffect(() => {
     if (modoEditar && current) {

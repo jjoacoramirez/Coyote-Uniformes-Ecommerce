@@ -1,7 +1,7 @@
 package com.coyoteuniformes.tienda_online.security;
 
 import java.io.IOException;
-import java.security.Security;
+import java.util.Arrays;
 
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -12,6 +12,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
 
 @Component
@@ -24,14 +25,12 @@ public class JwtAuthFilter extends OncePerRequestFilter{
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         
-        String authHeader = request.getHeader("Authorization");
-
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        String token = resolveToken(request);
+        if (token == null) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = authHeader.substring(7);
         try {
             String email = jwtUtil.extractUsername(token);
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -48,8 +47,22 @@ public class JwtAuthFilter extends OncePerRequestFilter{
         }
 
         filterChain.doFilter(request, response);
-}
+    }
 
-    
-    
+    private String resolveToken(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) return null;
+
+        return Arrays.stream(cookies)
+            .filter(cookie -> JwtUtil.COOKIE_NAME.equals(cookie.getName()))
+            .map(Cookie::getValue)
+            .filter(value -> !value.isBlank())
+            .findFirst()
+            .orElse(null);
+    }
 }

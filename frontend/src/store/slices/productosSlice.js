@@ -1,10 +1,22 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { api } from '../../services/api.js'
 
-export const fetchProductos = createAsyncThunk('productos/fetchAll', () => api.get('/productos'))
-export const fetchProductosAdmin = createAsyncThunk('productos/fetchAdmin', () => api.get('/productos/admin'))
+export const fetchProductos = createAsyncThunk(
+  'productos/fetchAll',
+  () => api.get('/productos'),
+  { condition: (_, { getState }) => getState().productos.status === 'idle' }
+)
+export const fetchProductosAdmin = createAsyncThunk(
+  'productos/fetchAdmin',
+  () => api.get('/productos/admin'),
+  { condition: (_, { getState }) => getState().productos.adminStatus === 'idle' }
+)
 
-export const fetchProductoById = createAsyncThunk('productos/fetchById', (id) => api.get(`/productos/${id}`))
+export const fetchProductoById = createAsyncThunk(
+  'productos/fetchById',
+  (id) => api.get(`/productos/${id}`),
+  { condition: (id, { getState }) => getState().productos.byIdStatus[id] == null }
+)
 
 export const deleteProducto = createAsyncThunk('productos/delete', async (id) => {
   await api.delete(`/productos/${id}`)
@@ -111,6 +123,9 @@ const productosSlice = createSlice({
       .addCase(deleteProducto.fulfilled, (s, a) => {
         s.deleteStatus = 'succeeded'
         s.adminItems = s.adminItems.filter((p) => p.idProducto !== a.payload)
+        s.items = s.items.filter((p) => p.idProducto !== a.payload)
+        delete s.byId[a.payload]
+        delete s.byIdStatus[a.payload]
       })
       .addCase(deleteProducto.rejected, (s, a) => { s.deleteStatus = 'failed'; s.deleteError = a.error.message })
   },

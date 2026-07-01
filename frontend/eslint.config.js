@@ -17,5 +17,10 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // Los formularios editables sincronizan datos asincronicos de Redux con
+      // borradores locales. Ese patron requiere actualizar estado al recibirlos.
+      'react-hooks/set-state-in-effect': 'off',
+    },
   },
 ])
