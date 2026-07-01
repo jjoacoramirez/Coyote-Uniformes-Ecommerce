@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import Layout from '../components/Layout.jsx'
 import { logout } from '../store/slices/authSlice.js'
-import { fetchMe, updatePerfil, updateDireccion, updatePassword } from '../store/slices/usuariosSlice.js'
+import { updatePerfil, updateDireccion, updatePassword } from '../store/slices/usuariosSlice.js'
 import { fetchPedidos } from '../store/slices/pedidosSlice.js'
 
 const ESTADO_LABELS = {
@@ -58,12 +58,11 @@ export default function UserAccount() {
 
   const cargando = status === 'idle' || status === 'loading'
 
-  // GET una sola vez (cache en el store).
+  // El perfil ya llega con restoreSession; pedidos conserva su cache en Redux.
   useEffect(() => {
     if (!user) return
-    if (status === 'idle') dispatch(fetchMe())
     if (pedidosStatus === 'idle') dispatch(fetchPedidos())
-  }, [user, status, pedidosStatus, dispatch])
+  }, [user, pedidosStatus, dispatch])
 
   // Sincroniza los formularios cuando llega/actualiza el perfil del store.
   useEffect(() => {

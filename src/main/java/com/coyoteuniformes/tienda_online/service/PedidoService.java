@@ -4,6 +4,8 @@ import com.coyoteuniformes.tienda_online.entity.Pedido;
 import com.coyoteuniformes.tienda_online.entity.dto.PedidoDto;
 import com.coyoteuniformes.tienda_online.exceptions.PedidoException;
 import com.coyoteuniformes.tienda_online.repository.PedidoRepository;
+import com.coyoteuniformes.tienda_online.repository.ClienteRepository;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,15 +17,23 @@ import java.util.List;
 public class PedidoService implements IPedidoService {
 
     private final PedidoRepository pedidoRepository;
+    private final ClienteRepository clienteRepository;
 
-    public PedidoService(PedidoRepository pedidoRepository) {
+    public PedidoService(PedidoRepository pedidoRepository, ClienteRepository clienteRepository) {
         this.pedidoRepository = pedidoRepository;
+        this.clienteRepository = clienteRepository;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<PedidoDto> getAllPedidos() {
-        return pedidoRepository.findAll()
+    public List<PedidoDto> getPedidos(String email, boolean admin) {
+        List<Pedido> pedidos = admin
+                ? pedidoRepository.findAll()
+                : clienteRepository.findByUsuarioEmailIgnoreCase(email)
+                        .map(cliente -> pedidoRepository.findByIdCliente(cliente.getIdCliente()))
+                        .orElseGet(List::of);
+
+        return pedidos
                 .stream()
                 .map(this::toDto)
                 .toList();
@@ -31,14 +41,20 @@ public class PedidoService implements IPedidoService {
 
     @Override
     @Transactional(readOnly = true)
-    public PedidoDto getPedidoById(Long id) {
-        return toDto(findPedidoById(id));
+    public PedidoDto getPedidoById(Long id, String email, boolean admin) {
+        Pedido pedido = findPedidoById(id);
+        validatePedidoOwner(pedido, email, admin);
+        return toDto(pedido);
     }
 
     @Override
-    public PedidoDto createPedido(PedidoDto pedidoDto) {
+    public PedidoDto createPedido(PedidoDto pedidoDto, String email, boolean admin) {
+        Long idCliente = admin
+                ? validatePositive(pedidoDto.getIdCliente(), "El id del cliente es obligatorio")
+                : getClienteId(email);
+
         Pedido pedido = Pedido.builder()
-                .idCliente(validatePositive(pedidoDto.getIdCliente(), "El id del cliente es obligatorio"))
+                .idCliente(idCliente)
                 .fechaPedido(pedidoDto.getFechaPedido() != null ? pedidoDto.getFechaPedido() : LocalDate.now())
                 .estado(validateEstado(pedidoDto.getEstado()))
                 .total(validateMonto(pedidoDto.getTotal()))
@@ -68,6 +84,26 @@ public class PedidoService implements IPedidoService {
     public Pedido findPedidoById(Long id) {
         return pedidoRepository.findById(id)
                 .orElseThrow(() -> new PedidoException("No existe un pedido con ID " + id));
+    }
+
+    private Long getClienteId(String email) {
+        return clienteRepository.findByUsuarioEmailIgnoreCase(email)
+                .map(cliente -> cliente.getIdCliente())
+                .orElseThrow(() -> new PedidoException("El usuario no tiene un perfil de cliente asociado"));
+    }
+
+    private void validatePedidoOwner(Pedido pedido, String email, boolean admin) {
+        if (admin) {
+            return;
+        }
+
+        Long clienteId = clienteRepository.findByUsuarioEmailIgnoreCase(email)
+                .map(cliente -> cliente.getIdCliente())
+                .orElseThrow(() -> new AccessDeniedException("No tenés acceso a este pedido"));
+
+        if (!clienteId.equals(pedido.getIdCliente())) {
+            throw new AccessDeniedException("No tenés acceso a este pedido");
+        }
     }
 
     private PedidoDto toDto(Pedido pedido) {

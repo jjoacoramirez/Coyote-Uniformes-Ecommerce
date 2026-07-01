@@ -69,6 +69,7 @@ const initialState = {
   error: null,
   byId: {},
   byIdStatus: {},
+  byIdError: {},
   adminItems: [],
   adminStatus: 'idle',
   adminError: null,
@@ -101,12 +102,20 @@ const productosSlice = createSlice({
       .addCase(fetchProductosAdmin.fulfilled, (s, a) => { s.adminStatus = 'succeeded'; s.adminItems = a.payload })
       .addCase(fetchProductosAdmin.rejected, (s, a) => { s.adminStatus = 'failed'; s.adminError = a.error.message })
 
-      .addCase(fetchProductoById.pending, (s, a) => { s.byIdStatus[a.meta.arg] = 'loading' })
-      .addCase(fetchProductoById.fulfilled, (s, a) => {
-        s.byIdStatus[a.payload.idProducto] = 'succeeded'
-        s.byId[a.payload.idProducto] = a.payload
+      .addCase(fetchProductoById.pending, (s, a) => {
+        s.byIdStatus[a.meta.arg] = 'loading'
+        delete s.byIdError[a.meta.arg]
       })
-      .addCase(fetchProductoById.rejected, (s, a) => { s.byIdStatus[a.meta.arg] = 'failed' })
+      .addCase(fetchProductoById.fulfilled, (s, a) => {
+        const id = a.meta.arg
+        s.byIdStatus[id] = 'succeeded'
+        s.byId[id] = a.payload
+        delete s.byIdError[id]
+      })
+      .addCase(fetchProductoById.rejected, (s, a) => {
+        s.byIdStatus[a.meta.arg] = 'failed'
+        s.byIdError[a.meta.arg] = a.error.message
+      })
 
       .addCase(guardarProducto.pending, (s) => { s.saveStatus = 'loading'; s.saveError = null })
       .addCase(guardarProducto.fulfilled, (s, a) => {

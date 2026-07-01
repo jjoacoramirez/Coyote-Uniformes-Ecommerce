@@ -15,6 +15,7 @@ function ProductDetailPage() {
 
   const producto = useSelector((s) => s.productos.byId[productId])
   const byIdStatus = useSelector((s) => s.productos.byIdStatus[productId])
+  const byIdError = useSelector((s) => s.productos.byIdError[productId])
   const variantes = useSelector((s) => s.variantes.byProducto[productId])
   const variantesStatus = useSelector((s) => s.variantes.statusByProducto[productId])
 
@@ -59,6 +60,7 @@ function ProductDetailPage() {
       <Layout>
         <section className="not-found">
           <h1>Producto no encontrado</h1>
+          {byIdError && <p>{byIdError}</p>}
           <Link className="button primary" to="/productos">
             Volver al catalogo
           </Link>

@@ -47,6 +47,7 @@ export default function AdminProductoForm() {
   const categoriasStatus = useSelector((s) => s.categorias.status)
   const producto = useSelector((s) => (modoEditar ? s.productos.byId[id] : null))
   const productoStatus = useSelector((s) => (modoEditar ? s.productos.byIdStatus[id] : 'succeeded'))
+  const productoError = useSelector((s) => (modoEditar ? s.productos.byIdError[id] : null))
   const variantesStore = useSelector((s) => (modoEditar ? s.variantes.byProducto[id] : null))
   const variantesStatus = useSelector((s) => (modoEditar ? s.variantes.statusByProducto[id] : 'succeeded'))
   const saveStatus = useSelector((s) => s.productos.saveStatus)
@@ -120,7 +121,9 @@ export default function AdminProductoForm() {
 
   const cargando = modoEditar && (productoStatus === 'idle' || productoStatus === 'loading')
   const guardando = saveStatus === 'loading'
-  const errorPagina = modoEditar && productoStatus === 'failed' ? 'No se pudo cargar el producto.' : null
+  const errorPagina = modoEditar && productoStatus === 'failed'
+    ? productoError || 'No se pudo cargar el producto.'
+    : null
 
   function handleImagenChange(e) {
     const file = e.target.files?.[0]

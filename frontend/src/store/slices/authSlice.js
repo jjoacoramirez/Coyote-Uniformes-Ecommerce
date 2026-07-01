@@ -8,7 +8,7 @@ function normalizeUser(me) {
 
 async function loadAuthenticatedUser() {
   const me = await api.get('/usuarios/me')
-  return normalizeUser(me)
+  return { user: normalizeUser(me), profile: me }
 }
 
 export const restoreSession = createAsyncThunk(
@@ -58,7 +58,7 @@ const authSlice = createSlice({
     builder
       .addCase(restoreSession.pending, (s) => { s.restoreStatus = 'loading' })
       .addCase(restoreSession.fulfilled, (s, a) => {
-        s.user = a.payload
+        s.user = a.payload.user
         s.initialized = true
         s.restoreStatus = 'succeeded'
       })
@@ -70,7 +70,7 @@ const authSlice = createSlice({
       .addCase(login.pending, (s) => { s.status = 'loading'; s.error = null })
       .addCase(login.fulfilled, (s, a) => {
         s.status = 'succeeded'
-        s.user = a.payload
+        s.user = a.payload.user
         s.initialized = true
       })
       .addCase(login.rejected, (s, a) => {
@@ -82,7 +82,7 @@ const authSlice = createSlice({
       .addCase(register.pending, (s) => { s.status = 'loading'; s.error = null })
       .addCase(register.fulfilled, (s, a) => {
         s.status = 'succeeded'
-        s.user = a.payload
+        s.user = a.payload.user
         s.initialized = true
       })
       .addCase(register.rejected, (s, a) => {

@@ -1,11 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { api } from '../../services/api.js'
+import { login, logout, register, restoreSession } from './authSlice.js'
 
-export const fetchMe = createAsyncThunk(
-  'usuarios/fetchMe',
-  () => api.get('/usuarios/me'),
-  { condition: (_, { getState }) => getState().usuarios.status === 'idle' }
-)
 export const updatePerfil = createAsyncThunk('usuarios/updatePerfil', (body) => api.put('/usuarios/me', body))
 export const updateDireccion = createAsyncThunk('usuarios/updateDireccion', (body) => api.put('/usuarios/me', body))
 export const updatePassword = createAsyncThunk('usuarios/updatePassword', (body) => api.put('/usuarios/me/password', body))
@@ -37,9 +33,17 @@ const usuariosSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchMe.pending, (s) => { s.status = 'loading'; s.error = null })
-      .addCase(fetchMe.fulfilled, (s, a) => { s.status = 'succeeded'; s.perfil = a.payload })
-      .addCase(fetchMe.rejected, (s, a) => { s.status = 'failed'; s.error = a.error.message })
+      // El mismo GET /usuarios/me que restaura auth hidrata también el perfil.
+      .addCase(restoreSession.pending, (s) => { s.status = 'loading'; s.error = null })
+      .addCase(restoreSession.fulfilled, (s, a) => {
+        s.status = 'succeeded'
+        s.perfil = a.payload.profile
+        s.error = null
+      })
+      .addCase(restoreSession.rejected, (s) => { s.status = 'idle'; s.perfil = null; s.error = null })
+      .addCase(login.fulfilled, (s, a) => { s.status = 'succeeded'; s.perfil = a.payload.profile; s.error = null })
+      .addCase(register.fulfilled, (s, a) => { s.status = 'succeeded'; s.perfil = a.payload.profile; s.error = null })
+      .addCase(logout.fulfilled, () => ({ ...initialState }))
 
       .addCase(updatePerfil.pending, (s) => { s.perfilStatus = 'loading'; s.perfilError = null })
       .addCase(updatePerfil.fulfilled, (s, a) => { s.perfilStatus = 'succeeded'; s.perfil = a.payload })

@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { api } from '../../services/api.js'
+import { logout } from './authSlice.js'
 
 export const fetchPedidos = createAsyncThunk(
   'pedidos/fetchAll',
@@ -16,6 +17,7 @@ const pedidosSlice = createSlice({
       .addCase(fetchPedidos.pending, (s) => { s.status = 'loading'; s.error = null })
       .addCase(fetchPedidos.fulfilled, (s, a) => { s.status = 'succeeded'; s.items = a.payload })
       .addCase(fetchPedidos.rejected, (s, a) => { s.status = 'failed'; s.error = a.error.message })
+      .addCase(logout.fulfilled, () => ({ items: [], status: 'idle', error: null }))
   },
 })
 
