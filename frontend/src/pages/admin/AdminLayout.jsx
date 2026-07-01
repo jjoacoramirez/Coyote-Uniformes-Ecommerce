@@ -1,17 +1,8 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
+import { useDispatch, useSelector } from 'react-redux'
+import { logout } from '../../store/slices/authSlice.js'
 
 const NAV = [
-  {
-    to: '/admin',
-    end: true,
-    label: 'Dashboard',
-    icon: (
-      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
-        <path d="M2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4zm9 0a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2V4zM2 13a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-3zm9 0a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2v-3z" />
-      </svg>
-    ),
-  },
   {
     to: '/admin/productos',
     label: 'Productos',
@@ -42,11 +33,12 @@ const NAV = [
 ]
 
 export default function AdminLayout() {
-  const { user, logout } = useAuth()
+  const user = useSelector((s) => s.auth.user)
+  const dispatch = useDispatch()
   const navigate = useNavigate()
 
   function handleLogout() {
-    logout()
+    dispatch(logout())
     navigate('/login')
   }
 

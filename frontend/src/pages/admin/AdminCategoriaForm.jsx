@@ -1,57 +1,64 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { api } from '../../services/api'
+import { useDispatch, useSelector } from 'react-redux'
+import {
+  createCategoria,
+  updateCategoria,
+  fetchCategoriaById,
+  resetCategoriaSave,
+  clearCategoriaActual,
+} from '../../store/slices/categoriasSlice.js'
 
 export default function AdminCategoriaForm() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const dispatch = useDispatch()
   const modoEditar = !!id
 
-  const [cargando, setCargando] = useState(modoEditar)
-  const [guardando, setGuardando] = useState(false)
-  const [error, setError] = useState('')
+  const { current, currentStatus, currentError, saveStatus, saveError } = useSelector((s) => s.categorias)
 
   const [form, setForm] = useState({ nombre: '', descripcion: '', imagenUrl: '' })
+  const [localError, setLocalError] = useState('')
+  const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => {
-    if (!modoEditar) return
-    api
-      .get(`/categorias/${id}`)
-      .then((cat) =>
-        setForm({
-          nombre: cat.nombre ?? '',
-          descripcion: cat.descripcion ?? '',
-          imagenUrl: cat.imagenUrl ?? '',
-        })
-      )
-      .catch((e) => setError(e.message))
-      .finally(() => setCargando(false))
-  }, [id])
+    dispatch(resetCategoriaSave())
+    if (modoEditar) dispatch(fetchCategoriaById(id))
+    return () => dispatch(clearCategoriaActual())
+  }, [id, modoEditar, dispatch])
 
-  async function handleGuardar() {
-    setError('')
+  useEffect(() => {
+    if (modoEditar && current) {
+      setForm({
+        nombre: current.nombre ?? '',
+        descripcion: current.descripcion ?? '',
+        imagenUrl: current.imagenUrl ?? '',
+      })
+    }
+  }, [modoEditar, current])
+
+  useEffect(() => {
+    if (submitted && saveStatus === 'succeeded') navigate('/admin/categorias')
+  }, [submitted, saveStatus, navigate])
+
+  const cargando = modoEditar && (currentStatus === 'idle' || currentStatus === 'loading')
+  const guardando = saveStatus === 'loading'
+  const error = localError || saveError || (modoEditar ? currentError : '')
+
+  function handleGuardar() {
+    setLocalError('')
     if (!form.nombre.trim()) {
-      setError('El nombre es obligatorio.')
+      setLocalError('El nombre es obligatorio.')
       return
     }
-    setGuardando(true)
-    try {
-      const body = {
-        nombre: form.nombre.trim(),
-        descripcion: form.descripcion.trim(),
-        imagenUrl: form.imagenUrl.trim() || null,
-      }
-      if (modoEditar) {
-        await api.put(`/categorias/${id}`, body)
-      } else {
-        await api.post('/categorias', body)
-      }
-      navigate('/admin/categorias')
-    } catch (e) {
-      setError(e.message || 'Error al guardar')
-    } finally {
-      setGuardando(false)
+    const body = {
+      nombre: form.nombre.trim(),
+      descripcion: form.descripcion.trim(),
+      imagenUrl: form.imagenUrl.trim() || null,
     }
+    setSubmitted(true)
+    if (modoEditar) dispatch(updateCategoria({ id, body }))
+    else dispatch(createCategoria(body))
   }
 
   if (cargando) return <div className="inv-empty">Cargando...</div>
@@ -126,9 +133,7 @@ export default function AdminCategoriaForm() {
                 type="text"
                 placeholder="Ej. Uniformes Médicos Premium"
                 value={form.nombre}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, nombre: e.target.value }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
                 autoFocus={!modoEditar}
               />
             </div>
@@ -143,9 +148,7 @@ export default function AdminCategoriaForm() {
                 placeholder="Escribí una descripción detallada para esta categoría..."
                 rows={5}
                 value={form.descripcion}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, descripcion: e.target.value }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))}
               />
             </div>
 
@@ -159,9 +162,7 @@ export default function AdminCategoriaForm() {
                 type="url"
                 placeholder="https://..."
                 value={form.imagenUrl}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, imagenUrl: e.target.value }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, imagenUrl: e.target.value }))}
               />
             </div>
 

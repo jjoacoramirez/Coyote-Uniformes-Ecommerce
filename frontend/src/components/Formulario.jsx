@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { api } from '../services/api.js'
+import { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { enviarContacto, resetContacto } from '../store/slices/contactoSlice.js'
 
 const MOTIVOS = ['Uniformes escolares', 'Uniformes medicos', 'Compra mayorista']
 
@@ -12,28 +13,28 @@ function Formulario() {
   })
   const [enviado, setEnviado] = useState(false)
   const [nombreEnviado, setNombreEnviado] = useState('')
-  const [enviando, setEnviando] = useState(false)
-  const [error, setError] = useState('')
+
+  const dispatch = useDispatch()
+  const { status, error } = useSelector((s) => s.contacto)
+  const enviando = status === 'loading'
+
+  useEffect(() => {
+    if (status === 'succeeded') {
+      setEnviado(true)
+      setCampos({ nombre: '', correo: '', motivo: MOTIVOS[0], mensaje: '' })
+      dispatch(resetContacto())
+    }
+  }, [status, dispatch])
 
   function handleChange(e) {
     const { name, value } = e.target
     setCampos(prev => ({ ...prev, [name]: value }))
   }
 
-  async function handleSubmit(e) {
+  function handleSubmit(e) {
     e.preventDefault()
-    setEnviando(true)
-    setError('')
-    try {
-      await api.post('/contactos', campos)
-      setNombreEnviado(campos.nombre)
-      setEnviado(true)
-      setCampos({ nombre: '', correo: '', motivo: MOTIVOS[0], mensaje: '' })
-    } catch (err) {
-      setError(err.message || 'No se pudo enviar el mensaje.')
-    } finally {
-      setEnviando(false)
-    }
+    setNombreEnviado(campos.nombre)
+    dispatch(enviarContacto(campos))
   }
 
   if (enviado) {

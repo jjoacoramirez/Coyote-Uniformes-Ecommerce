@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api } from '../../services/api'
+import { useDispatch, useSelector } from 'react-redux'
 import ConfirmDialog from '../../components/ConfirmDialog'
+import { fetchProductosAdmin, deleteProducto, clearProductoDeleteError } from '../../store/slices/productosSlice.js'
+import { fetchCategorias } from '../../store/slices/categoriasSlice.js'
 
 const PAGE_SIZE = 12
 
@@ -54,42 +56,40 @@ const IconoImagen = () => (
 
 export default function AdminProductos() {
   const navigate = useNavigate()
-  const [productos, setProductos] = useState([])
-  const [categorias, setCategorias] = useState([])
-  const [cargando, setCargando] = useState(true)
-  const [error, setError] = useState(null)
+  const dispatch = useDispatch()
+  const {
+    adminItems: productos,
+    adminStatus,
+    adminError,
+    deleteStatus,
+    deleteError,
+  } = useSelector((s) => s.productos)
+  const categorias = useSelector((s) => s.categorias.items)
+  const categoriasStatus = useSelector((s) => s.categorias.status)
 
   const [busqueda, setBusqueda] = useState('')
   const [categoriaFiltro, setCategoriaFiltro] = useState('')
   const [ordenFiltro, setOrdenFiltro] = useState('nuevo')
   const [estadoFiltro, setEstadoFiltro] = useState('')
   const [pagina, setPagina] = useState(1)
-
   const [confirm, setConfirm] = useState(null)
-  const [eliminando, setEliminando] = useState(false)
-  const [deleteError, setDeleteError] = useState(null)
 
   useEffect(() => {
-    async function cargar() {
-      try {
-        const [prods, cats] = await Promise.all([
-          api.get('/productos/admin'),
-          api.get('/categorias'),
-        ])
-        setProductos(prods)
-        setCategorias(cats)
-      } catch (e) {
-        setError(e.message)
-      } finally {
-        setCargando(false)
-      }
-    }
-    cargar()
-  }, [])
+    if (adminStatus === 'idle') dispatch(fetchProductosAdmin())
+  }, [adminStatus, dispatch])
+  useEffect(() => {
+    if (categoriasStatus === 'idle') dispatch(fetchCategorias())
+  }, [categoriasStatus, dispatch])
+  useEffect(() => {
+    if (deleteStatus === 'succeeded' || deleteStatus === 'failed') setConfirm(null)
+  }, [deleteStatus])
 
   useEffect(() => {
     setPagina(1)
   }, [busqueda, categoriaFiltro, estadoFiltro, ordenFiltro])
+
+  const cargando = adminStatus === 'idle' || adminStatus === 'loading'
+  const eliminando = deleteStatus === 'loading'
 
   const productosFiltrados = useMemo(() => {
     let lista = productos.filter((p) => {
@@ -130,22 +130,12 @@ export default function AdminProductos() {
   const productosPage = productosFiltrados.slice(inicio, inicio + PAGE_SIZE)
 
   function handleEliminar(id, nombre) {
-    setDeleteError(null)
+    dispatch(clearProductoDeleteError())
     setConfirm({ id, nombre })
   }
 
-  async function confirmarEliminar() {
-    setEliminando(true)
-    try {
-      await api.delete(`/productos/${confirm.id}`)
-      setProductos((prev) => prev.filter((p) => p.idProducto !== confirm.id))
-      setConfirm(null)
-    } catch (e) {
-      setDeleteError(e.message)
-      setConfirm(null)
-    } finally {
-      setEliminando(false)
-    }
+  function confirmarEliminar() {
+    dispatch(deleteProducto(confirm.id))
   }
 
   function paginasBotones() {
@@ -160,10 +150,10 @@ export default function AdminProductos() {
     return <div className="inv-empty">Cargando inventario...</div>
   }
 
-  if (error) {
+  if (adminError) {
     return (
       <div className="inv-empty" style={{ color: 'var(--color-primary)' }}>
-        Error al cargar productos: {error}
+        Error al cargar productos: {adminError}
       </div>
     )
   }
@@ -184,7 +174,7 @@ export default function AdminProductos() {
       {deleteError && (
         <div className="inv-delete-error">
           <span>No se pudo eliminar el producto: {deleteError}</span>
-          <button onClick={() => setDeleteError(null)}>×</button>
+          <button onClick={() => dispatch(clearProductoDeleteError())}>×</button>
         </div>
       )}
 

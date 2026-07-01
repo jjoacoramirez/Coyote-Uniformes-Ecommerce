@@ -1,8 +1,8 @@
 import { Link, NavLink } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext.jsx'
+import { useSelector } from 'react-redux'
 
 function Header() {
-  const { user } = useAuth()
+  const user = useSelector((s) => s.auth.user)
 
   return (
     <header className="site-header">

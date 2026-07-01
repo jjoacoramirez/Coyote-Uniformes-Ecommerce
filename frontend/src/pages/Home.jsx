@@ -1,23 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import CategoryCard from '../components/CategoryCard.jsx'
 import HeroBanner from '../components/HeroBanner.jsx'
 import Layout from '../components/Layout.jsx'
-import { api } from '../services/api.js'
+import { fetchCategorias } from '../store/slices/categoriasSlice.js'
 import { toCategoryShape } from '../utils/catalog.js'
 
 function Home() {
-  const [categories, setCategories] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const dispatch = useDispatch()
+  const { items, status, error } = useSelector((s) => s.categorias)
 
   useEffect(() => {
-    api.get('/categorias')
-      .then((categoriasData) => {
-        setCategories(categoriasData.map(toCategoryShape))
-      })
-      .catch(() => setError('No se pudieron cargar las colecciones.'))
-      .finally(() => setLoading(false))
-  }, [])
+    if (status === 'idle') dispatch(fetchCategorias())
+  }, [status, dispatch])
+
+  const categories = useMemo(() => items.map(toCategoryShape), [items])
+  const loading = status === 'idle' || status === 'loading'
 
   return (
     <Layout>
@@ -32,7 +30,7 @@ function Home() {
 
         <div className="category-grid">
           {loading && <p>Cargando colecciones...</p>}
-          {error && <p className="form-error">{error}</p>}
+          {error && <p className="form-error">No se pudieron cargar las colecciones.</p>}
           {!loading && !error && categories.map((category) => (
             <CategoryCard key={category.id} category={category} />
           ))}

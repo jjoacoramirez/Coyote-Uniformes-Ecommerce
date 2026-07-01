@@ -1,12 +1,15 @@
 import { Link } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
 import Layout from '../components/Layout.jsx'
 import OrderSummary from '../components/OrderSummary.jsx'
 import Stepper from '../components/Stepper.jsx'
-import { useCart } from '../context/CartContext.jsx'
+import { updateItem, removeItem } from '../store/slices/carritoSlice.js'
 import { formatPrice } from '../utils/format.js'
 
 function Cart() {
-  const { cartItems, loadingCart, updateQuantity, removeFromCart } = useCart()
+  const dispatch = useDispatch()
+  const { items: cartItems, status } = useSelector((s) => s.carrito)
+  const loadingCart = status === 'loading'
 
   if (loadingCart) {
     return (
@@ -46,7 +49,8 @@ function Cart() {
             <h1>Tu carrito</h1>
 
             <div className="cart-items-list">
-              {cartItems.map(({ key, product, variante, quantity }) => {
+              {cartItems.map((item) => {
+                const { key, product, variante, quantity, idItemCarrito } = item
                 const precio = variante?.precio ?? product.price
                 const subtotal = precio * quantity
                 return (
@@ -56,14 +60,24 @@ function Cart() {
                       <h2>{product.name}</h2>
                       <p>Talle {variante?.talle ?? '-'} / {product.categoryLabel}</p>
                       <div className="quantity-control">
-                        <button type="button" onClick={() => updateQuantity(key, quantity - 1)}>-</button>
+                        <button
+                          type="button"
+                          onClick={() => dispatch(updateItem({ idItemCarrito, cantidad: quantity - 1 }))}
+                        >
+                          -
+                        </button>
                         <span>{quantity}</span>
-                        <button type="button" onClick={() => updateQuantity(key, quantity + 1)}>+</button>
+                        <button
+                          type="button"
+                          onClick={() => dispatch(updateItem({ idItemCarrito, cantidad: quantity + 1 }))}
+                        >
+                          +
+                        </button>
                       </div>
                       <button
                         className="cart-remove"
                         type="button"
-                        onClick={() => removeFromCart(key)}
+                        onClick={() => dispatch(removeItem(idItemCarrito))}
                       >
                         Quitar
                       </button>

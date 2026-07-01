@@ -1,7 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useCart } from '../context/CartContext.jsx'
+import { useDispatch, useSelector } from 'react-redux'
 import { formatPrice } from '../utils/format.js'
+import { applyCoupon, removeCoupon, clearCouponError } from '../store/slices/carritoSlice.js'
+
+const IVA_RATE = 0.21
 
 function calcularDescuento(subtotal, coupon) {
   if (!coupon) return 0
@@ -13,13 +16,14 @@ function calcularDescuento(subtotal, coupon) {
   return Math.min(valor, subtotal)
 }
 
-const IVA_RATE = 0.21
-
 function OrderSummary({ ctaLabel, ctaTo, onCtaClick, paymentMethod, showCoupon = false }) {
-  const { cartItems, appliedCoupon, applyCoupon, removeCoupon } = useCart()
+  const dispatch = useDispatch()
+  const { items: cartItems, appliedCoupon, couponStatus, couponError } = useSelector((s) => s.carrito)
   const [inputCoupon, setInputCoupon] = useState('')
-  const [error, setError] = useState('')
-  const [applying, setApplying] = useState(false)
+
+  useEffect(() => {
+    if (couponStatus === 'succeeded') setInputCoupon('')
+  }, [couponStatus])
 
   if (cartItems.length === 0) return null
 
@@ -32,20 +36,12 @@ function OrderSummary({ ctaLabel, ctaTo, onCtaClick, paymentMethod, showCoupon =
   const baseImponible = subtotal - discount
   const iva = Math.round(baseImponible * IVA_RATE)
   const total = baseImponible + iva
+  const applying = couponStatus === 'loading'
 
-  async function handleApply(e) {
+  function handleApply(e) {
     e.preventDefault()
     if (!inputCoupon.trim()) return
-    setApplying(true)
-    try {
-      await applyCoupon(inputCoupon, subtotal)
-      setError('')
-      setInputCoupon('')
-    } catch (err) {
-      setError(err.message || 'Cupon invalido')
-    } finally {
-      setApplying(false)
-    }
+    dispatch(applyCoupon({ code: inputCoupon, subtotal }))
   }
 
   return (
@@ -68,13 +64,13 @@ function OrderSummary({ ctaLabel, ctaTo, onCtaClick, paymentMethod, showCoupon =
           {appliedCoupon ? (
             <div className="coupon-applied">
               <span>Cupon <strong>{appliedCoupon.codigo}</strong> aplicado</span>
-              <button type="button" className="coupon-remove" onClick={removeCoupon}>x</button>
+              <button type="button" className="coupon-remove" onClick={() => dispatch(removeCoupon())}>x</button>
             </div>
           ) : (
             <form className="coupon-form" onSubmit={handleApply}>
               <input
                 value={inputCoupon}
-                onChange={e => { setInputCoupon(e.target.value); setError('') }}
+                onChange={e => { setInputCoupon(e.target.value); if (couponError) dispatch(clearCouponError()) }}
                 placeholder="Codigo de cupon"
                 disabled={applying}
               />
@@ -83,7 +79,7 @@ function OrderSummary({ ctaLabel, ctaTo, onCtaClick, paymentMethod, showCoupon =
               </button>
             </form>
           )}
-          {error && <p className="form-error">{error}</p>}
+          {couponError && <p className="form-error">{couponError}</p>}
         </div>
       )}
 

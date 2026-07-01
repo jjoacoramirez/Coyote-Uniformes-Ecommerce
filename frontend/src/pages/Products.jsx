@@ -1,53 +1,51 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
 import Layout from '../components/Layout.jsx'
 import ProductCard from '../components/ProductCard.jsx'
-import { api } from '../services/api.js'
+import { fetchProductos } from '../store/slices/productosSlice.js'
+import { fetchCategorias } from '../store/slices/categoriasSlice.js'
 import { toCategoryShape, toProductShape } from '../utils/catalog.js'
 
 function Products() {
   const [searchParams] = useSearchParams()
-  const initialCategory = searchParams.get('categoria') ?? 'all'
-  const [category, setCategory] = useState(initialCategory)
+  const [category, setCategory] = useState(searchParams.get('categoria') ?? 'all')
   const [sort, setSort] = useState('relevance')
-  const [products, setProducts] = useState([])
-  const [categoryFilters, setCategoryFilters] = useState([{ id: 'all', label: 'Todas' }])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
 
+  const dispatch = useDispatch()
+  const { items: productosRaw, status: prodStatus, error: prodError } = useSelector((s) => s.productos)
+  const { items: categoriasRaw, status: catStatus } = useSelector((s) => s.categorias)
+
+  // GET una sola vez: si ya esta cargado en el store, no se vuelve a pedir.
   useEffect(() => {
-    Promise.all([api.get('/productos'), api.get('/categorias')])
-      .then(([productosData, categoriasData]) => {
-        const mapped = productosData.map((p) => toProductShape(p))
-        setProducts(mapped)
-        const filters = [
-          { id: 'all', label: 'Todas' },
-          ...categoriasData.map((c) => {
-            const category = toCategoryShape(c)
-            return { id: category.id, label: category.title }
-          }),
-        ]
-        setCategoryFilters(filters)
-      })
-      .catch(() => setError('No se pudieron cargar los productos.'))
-      .finally(() => setLoading(false))
-  }, [])
+    if (prodStatus === 'idle') dispatch(fetchProductos())
+  }, [prodStatus, dispatch])
+  useEffect(() => {
+    if (catStatus === 'idle') dispatch(fetchCategorias())
+  }, [catStatus, dispatch])
+
+  const products = useMemo(() => productosRaw.map((p) => toProductShape(p)), [productosRaw])
+
+  const categoryFilters = useMemo(
+    () => [
+      { id: 'all', label: 'Todas' },
+      ...categoriasRaw.map((c) => {
+        const cat = toCategoryShape(c)
+        return { id: cat.id, label: cat.title }
+      }),
+    ],
+    [categoriasRaw]
+  )
 
   const filteredProducts = useMemo(() => {
-    const filtered = products.filter((product) => {
-      return category === 'all' || product.category === category
-    })
-
-    if (sort === 'price-asc') {
-      return [...filtered].sort((a, b) => a.price - b.price)
-    }
-
-    if (sort === 'price-desc') {
-      return [...filtered].sort((a, b) => b.price - a.price)
-    }
-
+    const filtered = products.filter((product) => category === 'all' || product.category === category)
+    if (sort === 'price-asc') return [...filtered].sort((a, b) => a.price - b.price)
+    if (sort === 'price-desc') return [...filtered].sort((a, b) => b.price - a.price)
     return filtered
   }, [products, category, sort])
+
+  const loading = prodStatus === 'idle' || prodStatus === 'loading'
+  const error = prodError ? 'No se pudieron cargar los productos.' : ''
 
   return (
     <Layout>

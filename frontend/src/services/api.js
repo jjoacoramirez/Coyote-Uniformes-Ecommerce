@@ -1,46 +1,48 @@
+import { store } from '../store/store.js'
+
 const BASE_URL = 'http://localhost:8080/api'
 const REQUEST_TIMEOUT = 15000
 
-function getToken() {
-  return localStorage.getItem('coyote_token')
+// El token sale del store de Redux (no se persiste en el navegador). Acceso en
+// runtime, asi la dependencia circular store <-> api se resuelve sola.
+function authHeader() {
+  const token = store.getState().auth.token
+  return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
-// Envuelve fetch con un timeout que aborta la peticion para evitar
-// spinners infinitos si el backend no responde, y traduce errores de red.
-async function fetchWithTimeout(url, options) {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
-  try {
-    return await fetch(url, { ...options, signal: controller.signal })
-  } catch (err) {
-    if (err.name === 'AbortError') {
-      throw new Error('La conexion tardo demasiado. Intenta nuevamente.', { cause: err })
-    }
-    throw new Error('No se pudo conectar con el servidor. Verifica tu conexion.', { cause: err })
-  } finally {
-    clearTimeout(timer)
-  }
+// Timeout sin AbortController/try-catch: el que pierda la carrera, gana.
+function withTimeout(promise) {
+  const timeout = new Promise((_, reject) =>
+    setTimeout(
+      () => reject(new Error('La conexion tardo demasiado. Intenta nuevamente.')),
+      REQUEST_TIMEOUT
+    )
+  )
+  return Promise.race([promise, timeout])
 }
 
-async function request(path, options = {}) {
-  const token = getToken()
+// Sin try/catch: los errores se propagan como rechazo de promesa y los
+// captura el ciclo `rejected` del thunk que hizo la llamada.
+function handleResponse(res) {
+  if (res.status === 204) return null
+  return res
+    .json()
+    .catch(() => null)
+    .then((data) => {
+      if (!res.ok) {
+        return Promise.reject(new Error(data?.message || `Error ${res.status}`))
+      }
+      return data
+    })
+}
+
+function request(path, options = {}) {
   const headers = {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...authHeader(),
     ...options.headers,
   }
-
-  const res = await fetchWithTimeout(`${BASE_URL}${path}`, { ...options, headers })
-
-  if (res.status === 204) return null
-
-  const data = await res.json().catch(() => null)
-
-  if (!res.ok) {
-    throw new Error(data?.message || `Error ${res.status}`)
-  }
-
-  return data
+  return withTimeout(fetch(`${BASE_URL}${path}`, { ...options, headers })).then(handleResponse)
 }
 
 export const api = {
@@ -48,16 +50,8 @@ export const api = {
   post: (path, body) => request(path, { method: 'POST', body: JSON.stringify(body) }),
   put: (path, body) => request(path, { method: 'PUT', body: JSON.stringify(body) }),
   delete: (path) => request(path, { method: 'DELETE' }),
-  multipart: (path, formData, method = 'POST') => {
-    const token = getToken()
-    const headers = token ? { Authorization: `Bearer ${token}` } : {}
-    return fetchWithTimeout(`${BASE_URL}${path}`, { method, body: formData, headers }).then(
-      async (res) => {
-        if (res.status === 204) return null
-        const data = await res.json().catch(() => null)
-        if (!res.ok) throw new Error(data?.message || `Error ${res.status}`)
-        return data
-      }
-    )
-  },
+  multipart: (path, formData, method = 'POST') =>
+    withTimeout(
+      fetch(`${BASE_URL}${path}`, { method, body: formData, headers: authHeader() })
+    ).then(handleResponse),
 }

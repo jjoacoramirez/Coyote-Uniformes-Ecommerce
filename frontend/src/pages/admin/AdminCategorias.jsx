@@ -1,7 +1,12 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api } from '../../services/api'
+import { useDispatch, useSelector } from 'react-redux'
 import ConfirmDialog from '../../components/ConfirmDialog'
+import {
+  fetchCategoriasAdmin,
+  deleteCategoria,
+  clearCategoriaDeleteError,
+} from '../../store/slices/categoriasSlice.js'
 
 const IconoEditar = () => (
   <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
@@ -22,31 +27,29 @@ const IconoEliminar = () => (
 
 export default function AdminCategorias() {
   const navigate = useNavigate()
-  const [categorias, setCategorias] = useState([])
-  const [cargando, setCargando] = useState(true)
-  const [error, setError] = useState(null)
+  const dispatch = useDispatch()
+  const {
+    adminItems: categorias,
+    adminStatus,
+    adminError,
+    deleteStatus,
+    deleteError,
+  } = useSelector((s) => s.categorias)
 
   const [busqueda, setBusqueda] = useState('')
   const [ordenFiltro, setOrdenFiltro] = useState('nuevo')
-
   const [confirm, setConfirm] = useState(null)
-  const [eliminando, setEliminando] = useState(false)
-  const [deleteError, setDeleteError] = useState(null)
 
   useEffect(() => {
-    cargarCategorias()
-  }, [])
+    if (adminStatus === 'idle') dispatch(fetchCategoriasAdmin())
+  }, [adminStatus, dispatch])
 
-  async function cargarCategorias() {
-    try {
-      const data = await api.get('/categorias/admin')
-      setCategorias(data)
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setCargando(false)
-    }
-  }
+  useEffect(() => {
+    if (deleteStatus === 'succeeded' || deleteStatus === 'failed') setConfirm(null)
+  }, [deleteStatus])
+
+  const cargando = adminStatus === 'idle' || adminStatus === 'loading'
+  const eliminando = deleteStatus === 'loading'
 
   const categoriasFiltradas = useMemo(() => {
     let lista = categorias.filter((c) => {
@@ -63,19 +66,13 @@ export default function AdminCategorias() {
         lista = [...lista].sort((a, b) => b.idCategoria - a.idCategoria)
         break
       case 'nombre':
-        lista = [...lista].sort((a, b) =>
-          (a.nombre ?? '').localeCompare(b.nombre ?? '')
-        )
+        lista = [...lista].sort((a, b) => (a.nombre ?? '').localeCompare(b.nombre ?? ''))
         break
       case 'productos-desc':
-        lista = [...lista].sort(
-          (a, b) => Number(b.cantidadProductos) - Number(a.cantidadProductos)
-        )
+        lista = [...lista].sort((a, b) => Number(b.cantidadProductos) - Number(a.cantidadProductos))
         break
       case 'productos-asc':
-        lista = [...lista].sort(
-          (a, b) => Number(a.cantidadProductos) - Number(b.cantidadProductos)
-        )
+        lista = [...lista].sort((a, b) => Number(a.cantidadProductos) - Number(b.cantidadProductos))
         break
     }
 
@@ -83,30 +80,20 @@ export default function AdminCategorias() {
   }, [categorias, busqueda, ordenFiltro])
 
   function handleEliminar(id, nombre) {
-    setDeleteError(null)
+    dispatch(clearCategoriaDeleteError())
     setConfirm({ id, nombre })
   }
 
-  async function confirmarEliminar() {
-    setEliminando(true)
-    try {
-      await api.delete(`/categorias/${confirm.id}`)
-      setCategorias((prev) => prev.filter((c) => c.idCategoria !== confirm.id))
-      setConfirm(null)
-    } catch (e) {
-      setDeleteError(e.message)
-      setConfirm(null)
-    } finally {
-      setEliminando(false)
-    }
+  function confirmarEliminar() {
+    dispatch(deleteCategoria(confirm.id))
   }
 
   if (cargando) return <div className="inv-empty">Cargando categorías...</div>
 
-  if (error)
+  if (adminError)
     return (
       <div className="inv-empty" style={{ color: 'var(--color-primary)' }}>
-        Error al cargar categorías: {error}
+        Error al cargar categorías: {adminError}
       </div>
     )
 
@@ -124,7 +111,7 @@ export default function AdminCategorias() {
       {deleteError && (
         <div className="inv-delete-error">
           <span>Error al eliminar: {deleteError}</span>
-          <button onClick={() => setDeleteError(null)}>×</button>
+          <button onClick={() => dispatch(clearCategoriaDeleteError())}>×</button>
         </div>
       )}
 
@@ -171,10 +158,7 @@ export default function AdminCategorias() {
           <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
             <path d="M2 4.75A.75.75 0 0 1 2.75 4h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75zM2 10a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5A.75.75 0 0 1 2 10zm0 5.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 0 1.5h-3.5a.75.75 0 0 1-.75-.75z" />
           </svg>
-          <select
-            value={ordenFiltro}
-            onChange={(e) => setOrdenFiltro(e.target.value)}
-          >
+          <select value={ordenFiltro} onChange={(e) => setOrdenFiltro(e.target.value)}>
             <option value="nuevo">Ordenar: Más reciente</option>
             <option value="nombre">Ordenar: Nombre A-Z</option>
             <option value="productos-desc">Productos: mayor a menor</option>
@@ -234,18 +218,14 @@ export default function AdminCategorias() {
                       <button
                         className="inv-action-btn"
                         title="Editar"
-                        onClick={() =>
-                          navigate(`/admin/categorias/${cat.idCategoria}/editar`)
-                        }
+                        onClick={() => navigate(`/admin/categorias/${cat.idCategoria}/editar`)}
                       >
                         <IconoEditar />
                       </button>
                       <button
                         className="inv-action-btn delete"
                         title="Eliminar"
-                        onClick={() =>
-                          handleEliminar(cat.idCategoria, cat.nombre)
-                        }
+                        onClick={() => handleEliminar(cat.idCategoria, cat.nombre)}
                       >
                         <IconoEliminar />
                       </button>

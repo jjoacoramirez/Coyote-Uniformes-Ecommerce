@@ -1,25 +1,25 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext.jsx'
+import { useDispatch, useSelector } from 'react-redux'
+import { login, clearAuthError } from '../store/slices/authSlice.js'
 
 function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const dispatch = useDispatch()
+  const { user, status, error } = useSelector((s) => s.auth)
 
-  const handleSubmit = async (event) => {
-    event.preventDefault()
-    const result = await login(email, password)
-
-    if (!result.ok) {
-      setError(result.message)
-      return
+  useEffect(() => {
+    if (user) {
+      navigate(user.role === 'admin' ? '/admin' : '/productos')
     }
+  }, [user, navigate])
 
-    navigate(result.user.role === 'admin' ? '/admin' : '/productos')
+  const handleSubmit = (event) => {
+    event.preventDefault()
+    dispatch(login({ email, password }))
   }
 
   return (
@@ -33,7 +33,7 @@ function Login() {
             type="email"
             placeholder="tu@empresa.com"
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => { setEmail(event.target.value); if (error) dispatch(clearAuthError()) }}
             required
           />
         </label>
@@ -44,7 +44,7 @@ function Login() {
               type={showPassword ? 'text' : 'password'}
               placeholder="********"
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(event) => { setPassword(event.target.value); if (error) dispatch(clearAuthError()) }}
               required
             />
             <button type="button" onClick={() => setShowPassword(!showPassword)}>
@@ -53,8 +53,8 @@ function Login() {
           </div>
         </label>
         {error && <p className="form-error">{error}</p>}
-        <button className="button primary full" type="submit">
-          Iniciar sesion
+        <button className="button primary full" type="submit" disabled={status === 'loading'}>
+          {status === 'loading' ? 'Ingresando...' : 'Iniciar sesion'}
         </button>
         <Link to="/register">No tenes cuenta? Registrate</Link>
       </form>

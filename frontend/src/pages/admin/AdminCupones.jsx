@@ -1,7 +1,13 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api } from '../../services/api'
+import { useDispatch, useSelector } from 'react-redux'
 import ConfirmDialog from '../../components/ConfirmDialog'
+import {
+  fetchDescuentos,
+  updateDescuento,
+  deleteDescuento,
+  clearDescuentoDeleteError,
+} from '../../store/slices/descuentosSlice.js'
 
 function parseLocalDate(val) {
   if (!val) return null
@@ -15,11 +21,7 @@ function parseLocalDate(val) {
 function formatFecha(val) {
   const d = parseLocalDate(val)
   if (!d) return '—'
-  return d.toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  })
+  return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 function estadoCupon(c) {
@@ -67,33 +69,32 @@ const IconoEliminar = () => (
 
 export default function AdminCupones() {
   const navigate = useNavigate()
-  const [cupones, setCupones] = useState([])
-  const [cargando, setCargando] = useState(true)
-  const [error, setError] = useState(null)
+  const dispatch = useDispatch()
+  const {
+    items: cupones,
+    status,
+    error,
+    saveError,
+    deleteStatus,
+    deleteError,
+  } = useSelector((s) => s.descuentos)
 
   const [busqueda, setBusqueda] = useState('')
   const [tipoFiltro, setTipoFiltro] = useState('')
   const [estadoFiltro, setEstadoFiltro] = useState('')
   const [ordenFiltro, setOrdenFiltro] = useState('nuevo')
-
   const [confirm, setConfirm] = useState(null)
-  const [eliminando, setEliminando] = useState(false)
-  const [deleteError, setDeleteError] = useState(null)
 
   useEffect(() => {
-    cargarCupones()
-  }, [])
+    if (status === 'idle') dispatch(fetchDescuentos())
+  }, [status, dispatch])
+  useEffect(() => {
+    if (deleteStatus === 'succeeded' || deleteStatus === 'failed') setConfirm(null)
+  }, [deleteStatus])
 
-  async function cargarCupones() {
-    try {
-      const data = await api.get('/descuentos')
-      setCupones(data)
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setCargando(false)
-    }
-  }
+  const cargando = status === 'idle' || status === 'loading'
+  const eliminando = deleteStatus === 'loading'
+  const bannerError = deleteError || saveError
 
   const cuponesFiltrados = useMemo(() => {
     let lista = cupones.filter((c) => {
@@ -111,59 +112,30 @@ export default function AdminCupones() {
         lista = [...lista].sort((a, b) => b.idDescuento - a.idDescuento)
         break
       case 'codigo':
-        lista = [...lista].sort((a, b) =>
-          (a.codigo ?? '').localeCompare(b.codigo ?? '')
-        )
+        lista = [...lista].sort((a, b) => (a.codigo ?? '').localeCompare(b.codigo ?? ''))
         break
       case 'fecha-asc':
-        lista = [...lista].sort((a, b) => {
-          const da = parseLocalDate(a.fechaInicio)
-          const db = parseLocalDate(b.fechaInicio)
-          return (da ?? 0) - (db ?? 0)
-        })
+        lista = [...lista].sort((a, b) => (parseLocalDate(a.fechaInicio) ?? 0) - (parseLocalDate(b.fechaInicio) ?? 0))
         break
       case 'fecha-desc':
-        lista = [...lista].sort((a, b) => {
-          const da = parseLocalDate(a.fechaInicio)
-          const db = parseLocalDate(b.fechaInicio)
-          return (db ?? 0) - (da ?? 0)
-        })
+        lista = [...lista].sort((a, b) => (parseLocalDate(b.fechaInicio) ?? 0) - (parseLocalDate(a.fechaInicio) ?? 0))
         break
     }
 
     return lista
   }, [cupones, busqueda, tipoFiltro, estadoFiltro, ordenFiltro])
 
-  async function handleToggleActivo(c) {
-    try {
-      const actualizado = await api.put(`/descuentos/${c.idDescuento}`, {
-        activo: !c.activo,
-      })
-      setCupones((prev) =>
-        prev.map((x) => (x.idDescuento === c.idDescuento ? actualizado : x))
-      )
-    } catch (e) {
-      setDeleteError(e.message)
-    }
+  function handleToggleActivo(c) {
+    dispatch(updateDescuento({ id: c.idDescuento, body: { activo: !c.activo } }))
   }
 
   function handleEliminar(id, codigo) {
-    setDeleteError(null)
+    dispatch(clearDescuentoDeleteError())
     setConfirm({ id, codigo })
   }
 
-  async function confirmarEliminar() {
-    setEliminando(true)
-    try {
-      await api.delete(`/descuentos/${confirm.id}`)
-      setCupones((prev) => prev.filter((c) => c.idDescuento !== confirm.id))
-      setConfirm(null)
-    } catch (e) {
-      setDeleteError(e.message)
-      setConfirm(null)
-    } finally {
-      setEliminando(false)
-    }
+  function confirmarEliminar() {
+    dispatch(deleteDescuento(confirm.id))
   }
 
   if (cargando) return <div className="inv-empty">Cargando cupones...</div>
@@ -185,10 +157,10 @@ export default function AdminCupones() {
         loading={eliminando}
       />
 
-      {deleteError && (
+      {bannerError && (
         <div className="inv-delete-error">
-          <span>Error: {deleteError}</span>
-          <button onClick={() => setDeleteError(null)}>×</button>
+          <span>Error: {bannerError}</span>
+          <button onClick={() => dispatch(clearDescuentoDeleteError())}>×</button>
         </div>
       )}
 
@@ -253,10 +225,7 @@ export default function AdminCupones() {
               clipRule="evenodd"
             />
           </svg>
-          <select
-            value={estadoFiltro}
-            onChange={(e) => setEstadoFiltro(e.target.value)}
-          >
+          <select value={estadoFiltro} onChange={(e) => setEstadoFiltro(e.target.value)}>
             <option value="">Estado: Todos</option>
             <option value="activo">Activo</option>
             <option value="inactivo">Inactivo</option>
@@ -272,10 +241,7 @@ export default function AdminCupones() {
           <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
             <path d="M2 4.75A.75.75 0 0 1 2.75 4h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75zM2 10a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5A.75.75 0 0 1 2 10zm0 5.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 0 1.5h-3.5a.75.75 0 0 1-.75-.75z" />
           </svg>
-          <select
-            value={ordenFiltro}
-            onChange={(e) => setOrdenFiltro(e.target.value)}
-          >
+          <select value={ordenFiltro} onChange={(e) => setOrdenFiltro(e.target.value)}>
             <option value="nuevo">Ordenar: Más reciente</option>
             <option value="codigo">Ordenar: Código A-Z</option>
             <option value="fecha-asc">Inicio: más antiguo</option>
@@ -321,18 +287,14 @@ export default function AdminCupones() {
                     <td>
                       <div className="cup-codigo-cell">
                         <span className="cup-codigo">{c.codigo}</span>
-                        <span
-                          className={`cup-tipo-badge ${c.tipo === 'PORCENTAJE' ? 'pct' : 'fijo'}`}
-                        >
+                        <span className={`cup-tipo-badge ${c.tipo === 'PORCENTAJE' ? 'pct' : 'fijo'}`}>
                           {c.tipo === 'PORCENTAJE' ? '%' : 'AR$'}
                         </span>
                       </div>
                       {c.montoMinimo != null && Number(c.montoMinimo) > 0 && (
                         <div className="cup-minimo">
                           Mín. AR${' '}
-                          {Number(c.montoMinimo).toLocaleString('es-AR', {
-                            minimumFractionDigits: 0,
-                          })}
+                          {Number(c.montoMinimo).toLocaleString('es-AR', { minimumFractionDigits: 0 })}
                         </div>
                       )}
                     </td>
@@ -343,26 +305,20 @@ export default function AdminCupones() {
                       <div className="cup-vigencia">
                         <span>{formatFecha(c.fechaInicio)}</span>
                         <span className="cup-vigencia-sep">–</span>
-                        <span>
-                          {c.fechaFin ? formatFecha(c.fechaFin) : 'Sin venc.'}
-                        </span>
+                        <span>{c.fechaFin ? formatFecha(c.fechaFin) : 'Sin venc.'}</span>
                       </div>
                     </td>
                     <td>
                       <div className="cup-usos">
                         <span className="cup-usos-actual">{usoActual}</span>
                         <span className="cup-usos-sep">/</span>
-                        <span className="cup-usos-max">
-                          {usoMax != null ? usoMax : '∞'}
-                        </span>
+                        <span className="cup-usos-max">{usoMax != null ? usoMax : '∞'}</span>
                       </div>
                       {usoMax != null && (
                         <div className="cup-usos-bar">
                           <div
                             className="cup-usos-fill"
-                            style={{
-                              width: `${Math.min((usoActual / usoMax) * 100, 100)}%`,
-                            }}
+                            style={{ width: `${Math.min((usoActual / usoMax) * 100, 100)}%` }}
                           />
                         </div>
                       )}
@@ -379,12 +335,7 @@ export default function AdminCupones() {
                           title={c.activo ? 'Desactivar' : 'Activar'}
                           onClick={() => handleToggleActivo(c)}
                         >
-                          <svg
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                            width="15"
-                            height="15"
-                          >
+                          <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
                             <path
                               fillRule="evenodd"
                               d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5z"
@@ -395,9 +346,7 @@ export default function AdminCupones() {
                         <button
                           className="inv-action-btn"
                           title="Editar"
-                          onClick={() =>
-                            navigate(`/admin/cupones/${c.idDescuento}/editar`)
-                          }
+                          onClick={() => navigate(`/admin/cupones/${c.idDescuento}/editar`)}
                         >
                           <IconoEditar />
                         </button>

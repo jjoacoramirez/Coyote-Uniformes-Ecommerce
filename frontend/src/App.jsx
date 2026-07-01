@@ -1,4 +1,8 @@
+import { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { fetchCarrito, clearCarrito } from './store/slices/carritoSlice.js'
+import { restoreSession } from './store/slices/authSlice.js'
 import AdminLayout from './pages/admin/AdminLayout.jsx'
 import UserAccount from './pages/UserAccount.jsx'
 import AdminCategorias from './pages/admin/AdminCategorias.jsx'
@@ -20,6 +24,27 @@ import Register from './pages/Register.jsx'
 import Shipping from './pages/Shipping.jsx'
 
 function App() {
+  const dispatch = useDispatch()
+  const user = useSelector((s) => s.auth.user)
+  const token = useSelector((s) => s.auth.token)
+
+  // Al iniciar la app, si hay un token respaldado (sessionStorage) restaura la
+  // sesion pidiendo el perfil; si el token ya no sirve, se limpia solo.
+  useEffect(() => {
+    if (token && !user) dispatch(restoreSession())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Sincroniza el carrito con la sesion: al loguearse lo trae del backend,
+  // al desloguearse lo limpia (lo que antes hacia CartContext).
+  useEffect(() => {
+    if (user) {
+      dispatch(fetchCarrito())
+    } else {
+      dispatch(clearCarrito())
+    }
+  }, [user, dispatch])
+
   return (
     <Routes>
       <Route path="/" element={<Home />} />

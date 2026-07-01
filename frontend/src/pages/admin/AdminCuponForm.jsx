@@ -1,15 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { api } from '../../services/api'
-
-function parseLocalDate(val) {
-  if (!val) return null
-  if (Array.isArray(val)) {
-    const [y, m, d] = val
-    return new Date(y, m - 1, d)
-  }
-  return new Date(val + 'T00:00:00')
-}
+import { useDispatch, useSelector } from 'react-redux'
+import {
+  createDescuento,
+  updateDescuento,
+  fetchDescuentoById,
+  resetDescuentoSave,
+  clearDescuentoActual,
+} from '../../store/slices/descuentosSlice.js'
 
 function toInputDate(val) {
   if (!val) return ''
@@ -34,32 +32,43 @@ const FORM_VACIO = {
 export default function AdminCuponForm() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const dispatch = useDispatch()
   const modoEditar = !!id
 
-  const [cargando, setCargando] = useState(modoEditar)
-  const [guardando, setGuardando] = useState(false)
-  const [error, setError] = useState('')
+  const { current, currentStatus, currentError, saveStatus, saveError } = useSelector((s) => s.descuentos)
+
   const [form, setForm] = useState(FORM_VACIO)
+  const [localError, setLocalError] = useState('')
+  const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => {
-    if (!modoEditar) return
-    api
-      .get(`/descuentos/${id}`)
-      .then((c) =>
-        setForm({
-          codigo: c.codigo ?? '',
-          tipo: c.tipo ?? 'PORCENTAJE',
-          valor: c.valor != null ? String(c.valor) : '',
-          fechaInicio: toInputDate(c.fechaInicio),
-          fechaFin: toInputDate(c.fechaFin),
-          montoMinimo: c.montoMinimo != null ? String(c.montoMinimo) : '',
-          usoMaximo: c.usoMaximo != null ? String(c.usoMaximo) : '',
-          activo: c.activo ?? true,
-        })
-      )
-      .catch((e) => setError(e.message))
-      .finally(() => setCargando(false))
-  }, [id])
+    dispatch(resetDescuentoSave())
+    if (modoEditar) dispatch(fetchDescuentoById(id))
+    return () => dispatch(clearDescuentoActual())
+  }, [id, modoEditar, dispatch])
+
+  useEffect(() => {
+    if (modoEditar && current) {
+      setForm({
+        codigo: current.codigo ?? '',
+        tipo: current.tipo ?? 'PORCENTAJE',
+        valor: current.valor != null ? String(current.valor) : '',
+        fechaInicio: toInputDate(current.fechaInicio),
+        fechaFin: toInputDate(current.fechaFin),
+        montoMinimo: current.montoMinimo != null ? String(current.montoMinimo) : '',
+        usoMaximo: current.usoMaximo != null ? String(current.usoMaximo) : '',
+        activo: current.activo ?? true,
+      })
+    }
+  }, [modoEditar, current])
+
+  useEffect(() => {
+    if (submitted && saveStatus === 'succeeded') navigate('/admin/cupones')
+  }, [submitted, saveStatus, navigate])
+
+  const cargando = modoEditar && (currentStatus === 'idle' || currentStatus === 'loading')
+  const guardando = saveStatus === 'loading'
+  const error = localError || saveError || (modoEditar ? currentError : '')
 
   function buildBody() {
     return {
@@ -74,37 +83,27 @@ export default function AdminCuponForm() {
     }
   }
 
-  async function handleGuardar() {
-    setError('')
+  function handleGuardar() {
+    setLocalError('')
     if (!form.codigo.trim()) {
-      setError('El código es obligatorio.')
+      setLocalError('El código es obligatorio.')
       return
     }
     if (!form.valor || Number(form.valor) <= 0) {
-      setError('El valor del descuento debe ser mayor a 0.')
+      setLocalError('El valor del descuento debe ser mayor a 0.')
       return
     }
     if (!form.fechaInicio) {
-      setError('La fecha de inicio es obligatoria.')
+      setLocalError('La fecha de inicio es obligatoria.')
       return
     }
     if (form.tipo === 'PORCENTAJE' && Number(form.valor) > 100) {
-      setError('El porcentaje no puede superar 100%.')
+      setLocalError('El porcentaje no puede superar 100%.')
       return
     }
-    setGuardando(true)
-    try {
-      if (modoEditar) {
-        await api.put(`/descuentos/${id}`, buildBody())
-      } else {
-        await api.post('/descuentos', buildBody())
-      }
-      navigate('/admin/cupones')
-    } catch (e) {
-      setError(e.message || 'Error al guardar')
-    } finally {
-      setGuardando(false)
-    }
+    setSubmitted(true)
+    if (modoEditar) dispatch(updateDescuento({ id, body: buildBody() }))
+    else dispatch(createDescuento(buildBody()))
   }
 
   // --- Vista Previa ---
@@ -222,12 +221,7 @@ export default function AdminCuponForm() {
                   type="text"
                   placeholder="Ej: WINTER25"
                   value={form.codigo}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      codigo: e.target.value.toUpperCase(),
-                    }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, codigo: e.target.value.toUpperCase() }))}
                   autoFocus={!modoEditar}
                   style={{ textTransform: 'uppercase', fontFamily: 'monospace', letterSpacing: '0.05em' }}
                 />
@@ -239,9 +233,7 @@ export default function AdminCuponForm() {
                     type="checkbox"
                     className="cup-toggle-input"
                     checked={form.activo}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, activo: e.target.checked }))
-                    }
+                    onChange={(e) => setForm((f) => ({ ...f, activo: e.target.checked }))}
                   />
                   <span className="cup-toggle-track">
                     <span className="cup-toggle-thumb" />
@@ -276,9 +268,7 @@ export default function AdminCuponForm() {
                   id="cpf-tipo"
                   className="pf-select"
                   value={form.tipo}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, tipo: e.target.value }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, tipo: e.target.value }))}
                 >
                   <option value="PORCENTAJE">Porcentaje (%)</option>
                   <option value="MONTO_FIJO">Monto Fijo (AR$)</option>
@@ -301,9 +291,7 @@ export default function AdminCuponForm() {
                     max={form.tipo === 'PORCENTAJE' ? '100' : undefined}
                     placeholder={form.tipo === 'PORCENTAJE' ? '15' : '500'}
                     value={form.valor}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, valor: e.target.value }))
-                    }
+                    onChange={(e) => setForm((f) => ({ ...f, valor: e.target.value }))}
                   />
                 </div>
               </div>
@@ -322,9 +310,7 @@ export default function AdminCuponForm() {
                   step="1"
                   placeholder="Sin límite"
                   value={form.usoMaximo}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, usoMaximo: e.target.value }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, usoMaximo: e.target.value }))}
                 />
               </div>
               <div className="pf-field">
@@ -341,9 +327,7 @@ export default function AdminCuponForm() {
                     step="0.01"
                     placeholder="Sin mínimo"
                     value={form.montoMinimo}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, montoMinimo: e.target.value }))
-                    }
+                    onChange={(e) => setForm((f) => ({ ...f, montoMinimo: e.target.value }))}
                   />
                 </div>
               </div>
@@ -373,9 +357,7 @@ export default function AdminCuponForm() {
                   className="pf-input"
                   type="date"
                   value={form.fechaInicio}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, fechaInicio: e.target.value }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, fechaInicio: e.target.value }))}
                 />
               </div>
               <div className="pf-field">
@@ -388,9 +370,7 @@ export default function AdminCuponForm() {
                   type="date"
                   min={form.fechaInicio || undefined}
                   value={form.fechaFin}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, fechaFin: e.target.value }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, fechaFin: e.target.value }))}
                 />
               </div>
             </div>

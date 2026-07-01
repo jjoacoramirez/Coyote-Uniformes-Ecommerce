@@ -1,19 +1,22 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
 import { formatPrice } from '../utils/format.js'
-import { useAuth } from '../context/AuthContext.jsx'
-import { useCart } from '../context/CartContext.jsx'
+import { addItem, resetAddStatus } from '../store/slices/carritoSlice.js'
 
 function unique(arr) {
   return [...new Set(arr.filter(Boolean))]
 }
 
 function ProductDetail({ product, onAddToCart }) {
-  const { user } = useAuth()
-  const { addToCart } = useCart()
   const navigate = useNavigate()
-  const variantes = product.variantes ?? []
+  const dispatch = useDispatch()
+  const user = useSelector((s) => s.auth.user)
+  const addStatus = useSelector((s) => s.carrito.addStatus)
+  const addError = useSelector((s) => s.carrito.addError)
+  const [pendingAdd, setPendingAdd] = useState(false)
 
+  const variantes = product.variantes ?? []
   const talles  = unique(variantes.map(v => v.talle))
   const colores = unique(variantes.map(v => v.color))
   const hasTalles  = talles.length > 0
@@ -43,6 +46,29 @@ function ProductDetail({ product, onAddToCart }) {
   }) ?? variantes[0]
 
   const precio = varianteActual?.precio ?? product.price
+
+  // Notifica el resultado del alta (exito/error) leyendo el estado del slice.
+  useEffect(() => {
+    if (!pendingAdd) return
+    if (addStatus === 'succeeded') {
+      onAddToCart(product)
+      setPendingAdd(false)
+      dispatch(resetAddStatus())
+    } else if (addStatus === 'failed') {
+      onAddToCart(product, null, addError || 'No se pudo agregar el producto.')
+      setPendingAdd(false)
+      dispatch(resetAddStatus())
+    }
+  }, [addStatus, addError, pendingAdd, product, onAddToCart, dispatch])
+
+  function handleAgregar() {
+    if (!user) {
+      navigate('/login')
+      return
+    }
+    setPendingAdd(true)
+    dispatch(addItem(varianteActual))
+  }
 
   return (
     <section className="product-detail">
@@ -104,18 +130,8 @@ function ProductDetail({ product, onAddToCart }) {
         <button
           className="button primary full"
           type="button"
-          onClick={async () => {
-            if (!user) {
-              navigate('/login')
-              return
-            }
-            try {
-              await addToCart(product, varianteActual)
-              onAddToCart(product, varianteActual)
-            } catch (err) {
-              onAddToCart(product, varianteActual, err.message || 'No se pudo agregar el producto.')
-            }
-          }}
+          onClick={handleAgregar}
+          disabled={pendingAdd && addStatus === 'loading'}
         >
           Agregar al carrito
         </button>

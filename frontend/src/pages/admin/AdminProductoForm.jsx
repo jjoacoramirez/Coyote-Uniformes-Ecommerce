@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { api } from '../../services/api'
+import { useDispatch, useSelector } from 'react-redux'
+import { guardarProducto, fetchProductoById, resetProductoSave } from '../../store/slices/productosSlice.js'
+import { fetchCategorias } from '../../store/slices/categoriasSlice.js'
+import { fetchVariantesByProducto } from '../../store/slices/variantesSlice.js'
 
 const VARIANTE_VACIA = { talle: '', color: '', stock: '', sku: '', precio: '0', activo: true }
 
@@ -37,13 +40,20 @@ const IconoEliminar = () => (
 export default function AdminProductoForm() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const dispatch = useDispatch()
   const modoEditar = !!id
 
-  const [cargando, setCargando] = useState(modoEditar)
-  const [guardando, setGuardando] = useState(false)
-  const [errorPagina, setErrorPagina] = useState(null)
+  const categorias = useSelector((s) => s.categorias.items)
+  const categoriasStatus = useSelector((s) => s.categorias.status)
+  const producto = useSelector((s) => (modoEditar ? s.productos.byId[id] : null))
+  const productoStatus = useSelector((s) => (modoEditar ? s.productos.byIdStatus[id] : 'succeeded'))
+  const variantesStore = useSelector((s) => (modoEditar ? s.variantes.byProducto[id] : null))
+  const variantesStatus = useSelector((s) => (modoEditar ? s.variantes.statusByProducto[id] : 'succeeded'))
+  const saveStatus = useSelector((s) => s.productos.saveStatus)
+  const saveError = useSelector((s) => s.productos.saveError)
+
   const [errorForm, setErrorForm] = useState('')
-  const [categorias, setCategorias] = useState([])
+  const [submitted, setSubmitted] = useState(false)
 
   const [form, setForm] = useState({
     nombre: '',
@@ -67,40 +77,50 @@ export default function AdminProductoForm() {
     return ++keyRef.current
   }
 
+  // Carga el catalogo y (en edicion) el producto + variantes via thunks (fetch-once).
   useEffect(() => {
-    async function cargar() {
-      try {
-        const peticiones = [api.get('/categorias')]
-        if (modoEditar) {
-          peticiones.push(api.get(`/productos/${id}`))
-          peticiones.push(api.get(`/variantes/producto/${id}`))
-        }
-        const [cats, prod, vars] = await Promise.all(peticiones)
-        setCategorias(cats)
-        if (prod) {
-          setForm({
-            nombre: prod.nombre ?? '',
-            descripcion: prod.descripcion ?? '',
-            precioBase: prod.precioBase != null ? String(prod.precioBase) : '',
-            idCategoria:
-              prod.categoria?.idCategoria != null
-                ? String(prod.categoria.idCategoria)
-                : '',
-            activo: prod.activo ?? true,
-          })
-          if (prod.imagenUrl) setImagenPreview(prod.imagenUrl)
-        }
-        if (vars) {
-          setVariantes(vars.map((v) => ({ ...v, _key: nextKey() })))
-        }
-      } catch (e) {
-        setErrorPagina(e.message)
-      } finally {
-        setCargando(false)
+    dispatch(resetProductoSave())
+    if (categoriasStatus === 'idle') dispatch(fetchCategorias())
+    if (modoEditar) {
+      if (!producto && productoStatus !== 'loading' && productoStatus !== 'failed') {
+        dispatch(fetchProductoById(id))
+      }
+      if (variantesStore === undefined && variantesStatus !== 'loading' && variantesStatus !== 'failed') {
+        dispatch(fetchVariantesByProducto(id))
       }
     }
-    cargar()
-  }, [id])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, modoEditar, dispatch])
+
+  // Pobla el formulario cuando llega el producto del store.
+  useEffect(() => {
+    if (modoEditar && producto) {
+      setForm({
+        nombre: producto.nombre ?? '',
+        descripcion: producto.descripcion ?? '',
+        precioBase: producto.precioBase != null ? String(producto.precioBase) : '',
+        idCategoria: producto.categoria?.idCategoria != null ? String(producto.categoria.idCategoria) : '',
+        activo: producto.activo ?? true,
+      })
+      if (producto.imagenUrl) setImagenPreview(producto.imagenUrl)
+    }
+  }, [modoEditar, producto])
+
+  // Pobla las variantes locales cuando llegan del store.
+  useEffect(() => {
+    if (modoEditar && Array.isArray(variantesStore)) {
+      setVariantes(variantesStore.map((v) => ({ ...v, _key: nextKey() })))
+    }
+  }, [modoEditar, variantesStore])
+
+  // Navega cuando el guardado termina con exito.
+  useEffect(() => {
+    if (submitted && saveStatus === 'succeeded') navigate('/admin/productos')
+  }, [submitted, saveStatus, navigate])
+
+  const cargando = modoEditar && (productoStatus === 'idle' || productoStatus === 'loading')
+  const guardando = saveStatus === 'loading'
+  const errorPagina = modoEditar && productoStatus === 'failed' ? 'No se pudo cargar el producto.' : null
 
   function handleImagenChange(e) {
     const file = e.target.files?.[0]
@@ -205,7 +225,7 @@ export default function AdminProductoForm() {
     setVariantes((prev) => prev.filter((x) => x._key !== v._key))
   }
 
-  async function handleGuardar() {
+  function handleGuardar() {
     setErrorForm('')
     if (!form.nombre.trim()) {
       setErrorForm('El nombre del producto es obligatorio.')
@@ -220,56 +240,20 @@ export default function AdminProductoForm() {
       return
     }
 
-    setGuardando(true)
-    try {
-      const productoPayload = {
+    setSubmitted(true)
+    dispatch(guardarProducto({
+      id: modoEditar ? id : null,
+      productoPayload: {
         nombre: form.nombre.trim(),
         descripcion: form.descripcion.trim(),
         precioBase: Number(form.precioBase),
         idCategoria: Number(form.idCategoria),
         activo: form.activo,
-      }
-
-      const fd = new FormData()
-      fd.append(
-        'producto',
-        new Blob([JSON.stringify(productoPayload)], { type: 'application/json' })
-      )
-      if (imagenFile) fd.append('imagen', imagenFile)
-
-      let savedId = modoEditar ? Number(id) : null
-      if (modoEditar) {
-        await api.multipart(`/productos/${id}`, fd, 'PUT')
-      } else {
-        const creado = await api.multipart('/productos', fd)
-        savedId = creado.idProducto
-      }
-
-      await Promise.all(eliminados.map((eid) => api.delete(`/variantes/${eid}`)))
-
-      for (const v of variantes) {
-        const body = {
-          producto: { idProducto: savedId },
-          talle: v.talle?.trim() || null,
-          color: v.color?.trim() || null,
-          stock: Number(v.stock),
-          sku: v.sku || null,
-          precio: Number(v.precio) || 0,
-          activo: v.activo ?? true,
-        }
-        if (v.idVariante) {
-          await api.put(`/variantes/${v.idVariante}`, body)
-        } else {
-          await api.post('/variantes', body)
-        }
-      }
-
-      navigate('/admin/productos')
-    } catch (e) {
-      setErrorForm(e.message || 'Error al guardar el producto.')
-    } finally {
-      setGuardando(false)
-    }
+      },
+      imagenFile,
+      variantes,
+      eliminados,
+    }))
   }
 
   const formatPrecio = (p) =>
@@ -502,7 +486,7 @@ export default function AdminProductoForm() {
               </select>
             </div>
 
-            {errorForm && <p className="pf-error">{errorForm}</p>}
+            {(errorForm || saveError) && <p className="pf-error">{errorForm || saveError}</p>}
 
             <button
               className="button primary pf-btn-save"

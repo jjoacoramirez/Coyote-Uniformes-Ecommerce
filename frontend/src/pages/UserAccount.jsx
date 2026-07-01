@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
 import Layout from '../components/Layout.jsx'
-import { useAuth } from '../context/AuthContext.jsx'
-import { api } from '../services/api.js'
+import { logout } from '../store/slices/authSlice.js'
+import { fetchMe, updatePerfil, updateDireccion, updatePassword } from '../store/slices/usuariosSlice.js'
+import { fetchPedidos } from '../store/slices/pedidosSlice.js'
 
 const ESTADO_LABELS = {
   pendiente: 'Pendiente',
@@ -12,38 +14,41 @@ const ESTADO_LABELS = {
 }
 
 export default function UserAccount() {
-  const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const dispatch = useDispatch()
+
+  const user = useSelector((s) => s.auth.user)
+  const {
+    perfil: perfilData,
+    status,
+    perfilStatus,
+    perfilError,
+    direccionStatus,
+    direccionError,
+    passwordStatus,
+    passwordError,
+  } = useSelector((s) => s.usuarios)
+  const pedidosItems = useSelector((s) => s.pedidos.items)
+  const pedidosStatus = useSelector((s) => s.pedidos.status)
 
   const [perfil, setPerfil] = useState({ nombre: '', apellido: '', email: '', telefono: '' })
   const [direccion, setDireccion] = useState({
-    calle: '',
-    numero: '',
-    ciudad: '',
-    provincia: '',
-    codigoPostal: '',
-    pais: 'Argentina',
+    calle: '', numero: '', ciudad: '', provincia: '', codigoPostal: '', pais: 'Argentina',
   })
   const [editandoDireccion, setEditandoDireccion] = useState(false)
-  const [guardandoDireccion, setGuardandoDireccion] = useState(false)
-  const [errorDireccion, setErrorDireccion] = useState('')
+  const [errorDireccionLocal, setErrorDireccionLocal] = useState('')
   const [exitoDireccion, setExitoDireccion] = useState('')
-  const [cargando, setCargando] = useState(true)
-  const [guardandoPerfil, setGuardandoPerfil] = useState(false)
-  const [errorPerfil, setErrorPerfil] = useState('')
+  const [errorPerfilLocal, setErrorPerfilLocal] = useState('')
   const [exitoPerfil, setExitoPerfil] = useState('')
 
   const [pass, setPass] = useState({ actual: '', nueva: '', confirmar: '' })
-  const [errorPass, setErrorPass] = useState('')
+  const [errorPassLocal, setErrorPassLocal] = useState('')
   const [exitoPass, setExitoPass] = useState('')
-  const [guardandoPass, setGuardandoPass] = useState(false)
 
   const [notifEmail, setNotifEmail] = useState(true)
   const [notifSms, setNotifSms] = useState(false)
   const [idioma, setIdioma] = useState('es')
   const [prefsSaved, setPrefsSaved] = useState(false)
-
-  const [pedidos, setPedidos] = useState([])
 
   const [activeSection, setActiveSection] = useState('perfil')
   const secPerfil = useRef(null)
@@ -51,92 +56,98 @@ export default function UserAccount() {
   const secNotif = useRef(null)
   const secPedidos = useRef(null)
 
+  const cargando = status === 'idle' || status === 'loading'
+
+  // GET una sola vez (cache en el store).
   useEffect(() => {
-    if (!user) { setCargando(false); return }
-    Promise.allSettled([
-      api.get('/usuarios/me'),
-      api.get('/pedidos'),
-    ]).then(([perfilRes, pedidosRes]) => {
-      if (perfilRes.status === 'fulfilled') {
-        const d = perfilRes.value
-        setPerfil({
-          nombre: d.nombre ?? '',
-          apellido: d.apellido ?? '',
-          email: d.email ?? '',
-          telefono: d.telefono ?? '',
-        })
-        setDireccion({
-          calle: d.calle ?? '',
-          numero: d.numero ?? '',
-          ciudad: d.ciudad ?? '',
-          provincia: d.provincia ?? '',
-          codigoPostal: d.codigoPostal ?? '',
-          pais: d.pais ?? 'Argentina',
-        })
-      }
-      if (pedidosRes.status === 'fulfilled') {
-        setPedidos([...pedidosRes.value].slice(-3).reverse())
-      }
-    }).finally(() => setCargando(false))
-  }, [user])
+    if (!user) return
+    if (status === 'idle') dispatch(fetchMe())
+    if (pedidosStatus === 'idle') dispatch(fetchPedidos())
+  }, [user, status, pedidosStatus, dispatch])
+
+  // Sincroniza los formularios cuando llega/actualiza el perfil del store.
+  useEffect(() => {
+    if (perfilData) {
+      setPerfil({
+        nombre: perfilData.nombre ?? '',
+        apellido: perfilData.apellido ?? '',
+        email: perfilData.email ?? '',
+        telefono: perfilData.telefono ?? '',
+      })
+      setDireccion({
+        calle: perfilData.calle ?? '',
+        numero: perfilData.numero ?? '',
+        ciudad: perfilData.ciudad ?? '',
+        provincia: perfilData.provincia ?? '',
+        codigoPostal: perfilData.codigoPostal ?? '',
+        pais: perfilData.pais ?? 'Argentina',
+      })
+    }
+  }, [perfilData])
+
+  useEffect(() => {
+    if (perfilStatus === 'succeeded') {
+      setExitoPerfil('Perfil actualizado correctamente.')
+      const t = setTimeout(() => setExitoPerfil(''), 3000)
+      return () => clearTimeout(t)
+    }
+  }, [perfilStatus])
+
+  useEffect(() => {
+    if (passwordStatus === 'succeeded') {
+      setExitoPass('Contraseña actualizada correctamente.')
+      setPass({ actual: '', nueva: '', confirmar: '' })
+      const t = setTimeout(() => setExitoPass(''), 3000)
+      return () => clearTimeout(t)
+    }
+  }, [passwordStatus])
+
+  useEffect(() => {
+    if (direccionStatus === 'succeeded') {
+      setEditandoDireccion(false)
+      setExitoDireccion('Direccion guardada correctamente.')
+      const t = setTimeout(() => setExitoDireccion(''), 3000)
+      return () => clearTimeout(t)
+    }
+  }, [direccionStatus])
+
+  const ultimosPedidos = useMemo(() => [...pedidosItems].slice(-3).reverse(), [pedidosItems])
 
   const scrollTo = (ref, section) => {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     setActiveSection(section)
   }
 
-  const handleGuardarPerfil = async () => {
-    setErrorPerfil('')
+  const handleGuardarPerfil = () => {
+    setErrorPerfilLocal('')
     setExitoPerfil('')
     if (!perfil.nombre.trim() || !perfil.apellido.trim()) {
-      setErrorPerfil('El nombre y apellido son obligatorios.')
+      setErrorPerfilLocal('El nombre y apellido son obligatorios.')
       return
     }
-    setGuardandoPerfil(true)
-    try {
-      await api.put('/usuarios/me', {
-        nombre: perfil.nombre.trim(),
-        apellido: perfil.apellido.trim(),
-        telefono: perfil.telefono.trim() || null,
-      })
-      setExitoPerfil('Perfil actualizado correctamente.')
-      setTimeout(() => setExitoPerfil(''), 3000)
-    } catch (e) {
-      setErrorPerfil(e.message || 'Error al guardar el perfil.')
-    } finally {
-      setGuardandoPerfil(false)
-    }
+    dispatch(updatePerfil({
+      nombre: perfil.nombre.trim(),
+      apellido: perfil.apellido.trim(),
+      telefono: perfil.telefono.trim() || null,
+    }))
   }
 
-  const handleCambiarPass = async () => {
-    setErrorPass('')
+  const handleCambiarPass = () => {
+    setErrorPassLocal('')
     setExitoPass('')
     if (!pass.actual || !pass.nueva || !pass.confirmar) {
-      setErrorPass('Completá todos los campos.')
+      setErrorPassLocal('Completá todos los campos.')
       return
     }
     if (pass.nueva !== pass.confirmar) {
-      setErrorPass('Las contraseñas nuevas no coinciden.')
+      setErrorPassLocal('Las contraseñas nuevas no coinciden.')
       return
     }
     if (pass.nueva.length < 6) {
-      setErrorPass('La contraseña debe tener al menos 6 caracteres.')
+      setErrorPassLocal('La contraseña debe tener al menos 6 caracteres.')
       return
     }
-    setGuardandoPass(true)
-    try {
-      await api.put('/usuarios/me/password', {
-        contrasenaActual: pass.actual,
-        contrasenaNueva: pass.nueva,
-      })
-      setExitoPass('Contraseña actualizada correctamente.')
-      setPass({ actual: '', nueva: '', confirmar: '' })
-      setTimeout(() => setExitoPass(''), 3000)
-    } catch (e) {
-      setErrorPass(e.message || 'Error al cambiar la contraseña.')
-    } finally {
-      setGuardandoPass(false)
-    }
+    dispatch(updatePassword({ contrasenaActual: pass.actual, contrasenaNueva: pass.nueva }))
   }
 
   const direccionCompleta = Boolean(
@@ -152,85 +163,50 @@ export default function UserAccount() {
     setTimeout(() => setPrefsSaved(false), 2000)
   }
 
-  const handleGuardarDireccion = async () => {
-    setErrorDireccion('')
+  const handleGuardarDireccion = () => {
+    setErrorDireccionLocal('')
     setExitoDireccion('')
     if (!direccionCompleta) {
-      setErrorDireccion('Completa calle, numero, ciudad, provincia y codigo postal.')
+      setErrorDireccionLocal('Completa calle, numero, ciudad, provincia y codigo postal.')
       return
     }
-
-    setGuardandoDireccion(true)
-    try {
-      const data = await api.put('/usuarios/me', {
-        nombre: perfil.nombre.trim(),
-        apellido: perfil.apellido.trim(),
-        telefono: perfil.telefono.trim() || null,
-        actualizarDireccion: true,
-        calle: direccion.calle.trim(),
-        numero: direccion.numero.trim(),
-        ciudad: direccion.ciudad.trim(),
-        provincia: direccion.provincia.trim(),
-        codigoPostal: direccion.codigoPostal.trim(),
-        pais: direccion.pais.trim() || 'Argentina',
-      })
-      setDireccion({
-        calle: data.calle ?? '',
-        numero: data.numero ?? '',
-        ciudad: data.ciudad ?? '',
-        provincia: data.provincia ?? '',
-        codigoPostal: data.codigoPostal ?? '',
-        pais: data.pais ?? 'Argentina',
-      })
-      setEditandoDireccion(false)
-      setExitoDireccion('Direccion guardada correctamente.')
-      setTimeout(() => setExitoDireccion(''), 3000)
-    } catch (e) {
-      setErrorDireccion(e.message || 'Error al guardar la direccion.')
-    } finally {
-      setGuardandoDireccion(false)
-    }
+    dispatch(updateDireccion({
+      nombre: perfil.nombre.trim(),
+      apellido: perfil.apellido.trim(),
+      telefono: perfil.telefono.trim() || null,
+      actualizarDireccion: true,
+      calle: direccion.calle.trim(),
+      numero: direccion.numero.trim(),
+      ciudad: direccion.ciudad.trim(),
+      provincia: direccion.provincia.trim(),
+      codigoPostal: direccion.codigoPostal.trim(),
+      pais: direccion.pais.trim() || 'Argentina',
+    }))
   }
 
-  const handleQuitarDireccion = async () => {
-    setErrorDireccion('')
+  const handleQuitarDireccion = () => {
+    setErrorDireccionLocal('')
     setExitoDireccion('')
-    setGuardandoDireccion(true)
-    try {
-      await api.put('/usuarios/me', {
-        nombre: perfil.nombre.trim(),
-        apellido: perfil.apellido.trim(),
-        telefono: perfil.telefono.trim() || null,
-        actualizarDireccion: true,
-        calle: null,
-        numero: null,
-        ciudad: null,
-        provincia: null,
-        codigoPostal: null,
-        pais: null,
-      })
-      setDireccion({
-        calle: '',
-        numero: '',
-        ciudad: '',
-        provincia: '',
-        codigoPostal: '',
-        pais: 'Argentina',
-      })
-      setEditandoDireccion(false)
-      setExitoDireccion('Direccion eliminada.')
-      setTimeout(() => setExitoDireccion(''), 3000)
-    } catch (e) {
-      setErrorDireccion(e.message || 'Error al eliminar la direccion.')
-    } finally {
-      setGuardandoDireccion(false)
-    }
+    dispatch(updateDireccion({
+      nombre: perfil.nombre.trim(),
+      apellido: perfil.apellido.trim(),
+      telefono: perfil.telefono.trim() || null,
+      actualizarDireccion: true,
+      calle: null, numero: null, ciudad: null, provincia: null, codigoPostal: null, pais: null,
+    }))
   }
 
   const initials = [perfil.nombre?.[0], perfil.apellido?.[0]]
     .filter(Boolean).join('').toUpperCase() || user?.email?.[0]?.toUpperCase() || '?'
 
   const fullName = [perfil.nombre, perfil.apellido].filter(Boolean).join(' ')
+
+  const errorPerfil = errorPerfilLocal || perfilError
+  const errorPass = errorPassLocal || passwordError
+  const errorDireccion = errorDireccionLocal || direccionError
+  const guardandoPerfil = perfilStatus === 'loading'
+  const guardandoPass = passwordStatus === 'loading'
+  const guardandoDireccion = direccionStatus === 'loading'
 
   if (!user) {
     return (
@@ -306,7 +282,7 @@ export default function UserAccount() {
             <button
               type="button"
               className="up-sidebar-link danger"
-              onClick={() => { logout(); navigate('/') }}
+              onClick={() => { dispatch(logout()); navigate('/') }}
             >
               <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
                 <path fillRule="evenodd" d="M3 3a1 1 0 0 0-1 1v12a1 1 0 1 0 2 0V4a1 1 0 0 0-1-1zm10.293 9.293a1 1 0 0 0 1.414 1.414l3-3a1 1 0 0 0 0-1.414l-3-3a1 1 0 1 0-1.414 1.414L14.586 9H7a1 1 0 1 0 0 2h7.586l-1.293 1.293z" clipRule="evenodd" />
@@ -690,9 +666,9 @@ export default function UserAccount() {
               )}
             </div>
 
-            {pedidos.length > 0 ? (
+            {ultimosPedidos.length > 0 ? (
               <div className="up-orders-grid">
-                {pedidos.map((p) => (
+                {ultimosPedidos.map((p) => (
                   <div key={p.idPedido} className="up-order-card">
                     <div className="up-order-img-placeholder">
                       <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
@@ -701,7 +677,7 @@ export default function UserAccount() {
                     </div>
                     <div>
                       <p className="up-order-id">Pedido #{p.idPedido}</p>
-                      <p className="up-order-status">{ESTADO_LABELS[p.estado] ?? p.estado}</p>
+                      <p className="up-order-status">{ESTADO_LABELS[p.estado?.toLowerCase()] ?? p.estado}</p>
                       <p className="up-order-total">AR$ {Number(p.total).toLocaleString('es-AR')}</p>
                     </div>
                   </div>

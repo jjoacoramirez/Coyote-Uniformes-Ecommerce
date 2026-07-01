@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext.jsx'
+import { useDispatch, useSelector } from 'react-redux'
+import { register, clearAuthError } from '../store/slices/authSlice.js'
 
 function Register() {
   const [accepted, setAccepted] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [localError, setLocalError] = useState('')
   const [formData, setFormData] = useState({
     name: '',
     lastName: '',
@@ -14,28 +14,32 @@ function Register() {
     confirmPassword: '',
   })
   const navigate = useNavigate()
-  const { register } = useAuth()
+  const dispatch = useDispatch()
+  const { user, status, error } = useSelector((s) => s.auth)
+
+  useEffect(() => {
+    if (user) {
+      navigate('/productos')
+    }
+  }, [user, navigate])
 
   const updateField = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
-    setError('')
+    setLocalError('')
+    if (error) dispatch(clearAuthError())
   }
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = (event) => {
     event.preventDefault()
     if (formData.password !== formData.confirmPassword) {
-      setError('Las contraseñas no coinciden')
+      setLocalError('Las contraseñas no coinciden')
       return
     }
-    setLoading(true)
-    const result = await register(formData)
-    setLoading(false)
-    if (result.ok) {
-      navigate('/productos')
-    } else {
-      setError(result.message)
-    }
+    dispatch(register(formData))
   }
+
+  const loading = status === 'loading'
+  const shownError = localError || error
 
   return (
     <main className="auth-page">
@@ -94,7 +98,7 @@ function Register() {
           </label>
         </div>
 
-        {error && <p className="form-error">{error}</p>}
+        {shownError && <p className="form-error">{shownError}</p>}
 
         <label className="check-row">
           <input

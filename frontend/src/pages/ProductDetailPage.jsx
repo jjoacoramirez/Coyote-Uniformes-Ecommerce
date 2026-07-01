@@ -1,40 +1,48 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
 import Layout from '../components/Layout.jsx'
 import ProductDetail from '../components/ProductDetail.jsx'
 import ToastNotif from '../components/ToastNotif.jsx'
-import { api } from '../services/api.js'
+import { fetchProductoById } from '../store/slices/productosSlice.js'
+import { fetchVariantesByProducto } from '../store/slices/variantesSlice.js'
 import { toProductShape } from '../utils/catalog.js'
 
 function ProductDetailPage() {
   const { productId } = useParams()
   const [toast, setToast] = useState('')
-  const [product, setProduct] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [notFound, setNotFound] = useState(false)
+  const dispatch = useDispatch()
 
+  const producto = useSelector((s) => s.productos.byId[productId])
+  const byIdStatus = useSelector((s) => s.productos.byIdStatus[productId])
+  const variantes = useSelector((s) => s.variantes.byProducto[productId])
+  const variantesStatus = useSelector((s) => s.variantes.statusByProducto[productId])
+
+  // GET una sola vez por id (cache en el store).
   useEffect(() => {
-    api.get(`/productos/${productId}`)
-      .then(async (productoData) => {
-        if (!productoData) {
-          setNotFound(true)
-          return
-        }
-        let variantes = []
-        try {
-          variantes = (await api.get(`/variantes/producto/${productId}`)) ?? []
-        } catch {
-          // Si las variantes no están disponibles el producto igual carga
-        }
-        setProduct(toProductShape(productoData, variantes))
-      })
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false))
-  }, [productId])
+    if (!producto && byIdStatus !== 'loading' && byIdStatus !== 'failed') {
+      dispatch(fetchProductoById(productId))
+    }
+  }, [productId, producto, byIdStatus, dispatch])
+
+  // Las variantes son no-criticas: si fallan, el producto igual carga.
+  useEffect(() => {
+    if (variantes === undefined && variantesStatus !== 'loading' && variantesStatus !== 'failed') {
+      dispatch(fetchVariantesByProducto(productId))
+    }
+  }, [productId, variantes, variantesStatus, dispatch])
+
+  const product = useMemo(
+    () => (producto ? toProductShape(producto, variantes ?? []) : null),
+    [producto, variantes]
+  )
 
   const handleAddToCart = (selectedProduct, _selectedVariant, errorMessage) => {
     setToast(errorMessage || `${selectedProduct.name} agregado al carrito`)
   }
+
+  const notFound = byIdStatus === 'failed'
+  const loading = !product && !notFound
 
   if (loading) {
     return (
